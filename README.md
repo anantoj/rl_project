@@ -14,6 +14,7 @@ cd rl_project && pip install -e .
 ```py
 from rl_project.trainer import Trainer
 
+trainer = Trainer()
 trainer.train()
 ```
 
@@ -22,6 +23,7 @@ For image models:
 from torchvision.models import resnet18
 from rl_project.trainer import Trainer
 
+trainer = Trainer()
 trainer.train(model=resnet18())
 ```
 
