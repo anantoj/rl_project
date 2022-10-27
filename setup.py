@@ -14,7 +14,7 @@ install_requires =[
 if __name__ == "__main__":
     setup(
         name="rl_project",
-        description="Indonesian G2P.",
+        description="Reinforcement Learning Project DQN Benchmark Trainer",
         long_description=long_description,
         long_description_content_type="text/markdown",
         author="anantoj",
