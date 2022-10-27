@@ -1,4 +1,4 @@
-# Deep Q-Learning Benchmark Trainer
+# Deep Q-Learning Vision Model Trainer
 
 This library is a Deep Q-Learning trainer, specialized for vision models, in various OpenAI Gym environments. It is developed as part of my Reinforcement Learning project to evaluate performances of image models in various Deep Q-Learning tasks.
 
