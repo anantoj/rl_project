@@ -45,18 +45,18 @@ NUM_EPISODES = 1000
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    em = EnvManager("CartPole-v1", device)
+    env = EnvManager("CartPole-v1", device)
     strategy = EpsilonGreedyStrategy(EPS_START, EPS_END, EPS_DECAY)
-    agent = Agent(strategy, em.get_action_space(), device)
+    agent = Agent(strategy, env.get_action_space(), device)
     memory = ReplayMemory(MEMORY_SIZE)
  
     # Initialize policy network and target network
 
-    # policy_net = ImageModel(em.num_state_features(), em.get_action_space(), resnet18()).to(device)
-    policy_net = BaselineModel(em.num_state_features(), em.get_action_space()).to(device)
+    # policy_net = ImageModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
+    policy_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
 
-    # target_net = ImageModel(em.num_state_features(), em.get_action_space(), resnet18()).to(device)
-    target_net = BaselineModel(em.num_state_features(), em.get_action_space()).to(device)
+    # target_net = ImageModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
+    target_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
 
     # Copy policy network weights for uniformity
     target_net.load_state_dict(policy_net.state_dict())
@@ -68,30 +68,30 @@ def main():
     for episode in range(NUM_EPISODES):
 
         # reset env
-        em.reset()
-        em.done = False
+        env.reset()
+        env.done = False
 
         # Initialize the starting state.
-        state = em.get_state()
+        state = env.get_state()
 
         timestep = 0
         episode_reward = 0
         
-        while not em.done or timestep < MAX_TIMESTEP:
+        while not env.done or timestep < MAX_TIMESTEP:
             timestep+=1
             
             # TODO: Render Option
-            # em.render()
+            # env.render()
 
             # Select an to take action using policy network
             action = agent.select_action(state, policy_net)
 
             # Apply action and accumulate reward
-            reward = em.take_action(action)
+            reward = env.take_action(action)
             episode_reward += reward.item()
             
             # Record state that is the resultant of action taken
-            next_states = em.get_state()
+            next_states = env.get_state()
             
             # Save Experience of SARS 
             memory.push(Experience(state, action, reward, next_states))
@@ -120,7 +120,7 @@ def main():
                 optimizer.zero_grad()
 
             # If episode is DONE or TRUNCATED, 
-            if em.done or timestep >= MAX_TIMESTEP:
+            if env.done or timestep >= MAX_TIMESTEP:
                 all_rewards.append(episode_reward)
 
                 print(f"Episode: {len(all_rewards)} | Episode Reward: {episode_reward}")
@@ -131,7 +131,7 @@ def main():
         if episode % UPDATE_FREQ == 0:
             target_net.load_state_dict(policy_net.state_dict())
 
-    em.close()
+    env.close()
 
     pass
 

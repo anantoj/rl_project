@@ -56,19 +56,19 @@ class Trainer():
         assert gym.__version__ == "0.25.2", "OpenAI Gym version is not 0.25.2"
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        em = EnvManager("CartPole-v1", device)
+        env = EnvManager("CartPole-v1", device)
         strategy = EpsilonGreedyStrategy(self.eps_start, self.eps_end, self.eps_decay)
-        agent = Agent(strategy, em.get_action_space(), device)
+        agent = Agent(strategy, env.get_action_space(), device)
         memory = ReplayMemory(self.memory_size)
     
         # Initialize policy network and target network
         
         if self.use_baseline:
-            policy_net = BaselineModel(em.num_state_features(), em.get_action_space()).to(device)
-            target_net = BaselineModel(em.num_state_features(), em.get_action_space()).to(device)
+            policy_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
+            target_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
         else:
-            policy_net = ImageModel(em.num_state_features(), em.get_action_space(), self.model).to(device)
-            target_net = ImageModel(em.num_state_features(), em.get_action_space(), self.model).to(device)
+            policy_net = ImageModel(env.num_state_features(), env.get_action_space(), self.model).to(device)
+            target_net = ImageModel(env.num_state_features(), env.get_action_space(), self.model).to(device)
         
 
         # Copy policy network weights for uniformity
@@ -81,30 +81,30 @@ class Trainer():
         for episode in range(self.num_episodes):
 
             # reset env
-            em.reset()
-            em.done = False
+            env.reset()
+            env.done = False
 
             # Initialize the starting state.
-            state = em.get_state()
+            state = env.get_state()
 
             timestep = 0
             episode_reward = 0
             
-            while not em.done or timestep < self.max_timestep:
+            while not env.done or timestep < self.max_timestep:
                 timestep+=1
                 
                 # TODO: Render Option
-                # em.render()
+                # env.render()
 
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
 
                 # Apply action and accumulate reward
-                reward = em.take_action(action)
+                reward = env.take_action(action)
                 episode_reward += reward.item()
                 
                 # Record state that is the resultant of action taken
-                next_states = em.get_state()
+                next_states = env.get_state()
                 
                 # Save Experience of SARS 
                 memory.push(Experience(state, action, reward, next_states))
@@ -119,7 +119,7 @@ class Trainer():
 
                     current_q_values = QValues.get_current(policy_net, states, actions)
                     next_q_values = QValues.get_next(target_net, next_states)
-                    
+
                     target_q_values = rewards + (self.discount_factor * next_q_values)
                         
                     # Calculate loss between output Q-values and target Q-values.
@@ -132,7 +132,7 @@ class Trainer():
                     optimizer.zero_grad()
 
                 # If episode is DONE or TRUNCATED, 
-                if em.done or timestep >= self.max_timestep:
+                if env.done or timestep >= self.max_timestep:
                     all_rewards.append(episode_reward)
                     print(f"Episode: {len(all_rewards)} | Episode Reward: {episode_reward}")
 
