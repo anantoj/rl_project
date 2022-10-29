@@ -26,7 +26,8 @@ class Trainer():
             training_mode="pos", env="CartPole-v1", use_baseline=True, model=None,
             batch_size=256, num_streaks=30, max_timestep=500, discount_factor=0.95,
             update_freq=10, eps_start=1, eps_end=0.01, eps_decay=0.001, 
-            memory_size=100000, learning_rate=0.001, num_episodes=1000):
+            memory_size=100000, learning_rate=0.001, num_episodes=1000,
+            render=False):
 
         self.training_mode = training_mode
         if self.training_mode not in ["pos", "img"]:
@@ -35,7 +36,7 @@ class Trainer():
         self.env = env
         self.use_baseline = use_baseline
         self.model = model
-
+        
         self.batch_size = batch_size
         self.num_streaks = num_streaks # number of streaks to indicate completion
         self.max_timestep = max_timestep #  max timestep per episode for truncation
@@ -50,6 +51,8 @@ class Trainer():
         self.memory_size = memory_size # Replay Memory capacity
         self.learning_rate = learning_rate
         self.num_episodes= num_episodes
+
+        self.render = render
 
     def train(self) -> None:
 
@@ -93,8 +96,8 @@ class Trainer():
             while not env.done or timestep < self.max_timestep:
                 timestep+=1
                 
-                # TODO: Render Option
-                # env.render()
+                if self.render:
+                    env.render()
 
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
