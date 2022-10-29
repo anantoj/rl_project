@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from typing import NamedTuple, Tuple
 from collections import namedtuple
 
-from rl_project.networks.baseline_model import BaselineModel
-from rl_project.networks.image_model import ImageModel
-from rl_project.utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
+from .networks.baseline_model import BaselineModel
+from .networks.image_model import ImageModel
+from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
 Experience = namedtuple(
     'Experience',
