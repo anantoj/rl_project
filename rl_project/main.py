@@ -23,8 +23,6 @@ Experience = namedtuple(
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# TODO: Capitalize Constants
-
 BATCH_SIZE = 256
 NUM_STREAKS = 30 # number of streaks to indicate completion
 MAX_TIMESTEP = 500 # max timestep per episode for truncation
@@ -96,10 +94,11 @@ def main():
             # Save Experience of SARS 
             memory.push(Experience(state, action, reward, next_states))
             state = next_states
-    
+
+            # if enough experience has been stored
             if memory.can_provide_sample(BATCH_SIZE):
 
-                # Extract sample from memory queue if able to
+                # Sample SARS experiences from memory queue
                 experiences = memory.sample(BATCH_SIZE)
                 
                 # Convert experience to tensors
@@ -107,9 +106,8 @@ def main():
 
                 current_q_values = QValues.get_current(policy_net, states, actions)
                 next_q_values = QValues.get_next(target_net, next_states)
-
+                
                 target_q_values = rewards + (DISCOUNT_FACTOR * next_q_values)
-                    
                 # Calculate loss between output Q-values and target Q-values.
                 loss = F.mse_loss(current_q_values, target_q_values.unsqueeze(1))
 

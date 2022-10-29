@@ -220,16 +220,58 @@ class QValues:
 
     @staticmethod
     def get_current(policy_net, states, actions):
-        return policy_net(states).gather(dim=1, index=actions.unsqueeze(-1))
+        """Use policy network to calculate state-action values for a batch of state-action pairs
+
+        Parameters
+        ----------
+        policy_net : nn.Module
+            Policy Network
+        states : torch.Tensor
+            Tensor of size (batch_size, env_obs_space) containing sampled states from memory
+        actions : torch.Tensor
+            Tensor of size (batch_size) containing sampled corresponding actions from memory
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor of size (batch_size, 1) containing Q-values for each input state-action pair
+        """
+        q_values = policy_net(states)
+        
+        return q_values.gather( # only select q values for specific action (eg. if action is 0 then only choose q of index 0)
+            dim=1, # action dim
+            index=actions.unsqueeze(-1) # select the specific action
+        )
+        
+    
 
     @staticmethod
     def get_next(target_net, next_states):
-        final_states_location = next_states.flatten(start_dim=1).max(dim=1)[0].eq(0).type(torch.bool) 
-    
-        non_final_states_locations = (final_states_location == False)
-        non_final_states = next_states[non_final_states_locations]
+        """Use target network to calculate state-action values, specifically for non-terminal next states S'
 
+        Parameters
+        ----------
+        target_net : nn.Module
+            Target Network
+        next_states : torch.Tensor
+            Tensor of size (batch_size, env_obs_space) containing transitioned states S' from memory
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor of size (batch_size) containing Q-values for each
+        """
+        # find location of terminal states in S' batch
+        terminal_states_location = next_states.flatten(start_dim=1).max(dim=1)[0].eq(0).type(torch.bool) 
+        
+        # select non-terminal states
+        non_terminal_states_locations = (terminal_states_location == False)
+        non_terminal_states = next_states[non_terminal_states_locations]
+
+        # initialize zeros tensor of size (batch_size) 
         batch_size = next_states.shape[0]
         values = torch.zeros(batch_size).to(QValues.device)
-        values[non_final_states_locations] = target_net(non_final_states).max(dim=1)[0].detach()
+
+        # use target net to calculate q values for non-terminal states. Q values for terminal states are 0
+        values[non_terminal_states_locations] = target_net(non_terminal_states).max(dim=1)[0].detach()
         return values

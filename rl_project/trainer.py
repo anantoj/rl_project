@@ -112,7 +112,8 @@ class Trainer():
                 # Save Experience of SARS 
                 memory.push(Experience(state, action, reward, next_states))
                 state = next_states
-        
+                
+                # Learn
                 if memory.can_provide_sample(self.batch_size):
                     # Extract sample from memory queue if able to
                     experiences = memory.sample(self.batch_size)
@@ -120,17 +121,23 @@ class Trainer():
                     # Convert experience to tensors
                     states, actions, rewards, next_states = self.extract_tensors(experiences)
 
+                    # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
+
+                    # use policy network to calculate state-action values Q(S) for current state S
                     current_q_values = QValues.get_current(policy_net, states, actions)
+                    
+                    # use target network to calculate state-action values Q(S') for next state S'
                     next_q_values = QValues.get_next(target_net, next_states)
 
-                    target_q_values = rewards + (self.discount_factor * next_q_values)
+                    # R + y*V(S')
+                    expected_q_values = rewards + (self.discount_factor * next_q_values)
                         
-                    # Calculate loss between output Q-values and target Q-values.
-                    loss = F.mse_loss(current_q_values, target_q_values.unsqueeze(1))
+                    # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
+                    loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
 
                     # Update policy_net weights from loss
                     loss.backward()
-                    optimizer.step()
+                    optimizer.step() # Q(S) + a[R + y*Q(S') - Q(S)]
 
                     optimizer.zero_grad()
 

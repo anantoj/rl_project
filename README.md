@@ -42,10 +42,10 @@ Currently the only supported environments are `CartPole-v1`, `MountainCar-v0`, a
 Other environments (even outside of classic control) with `Discrete` inputs should theoritically not cause issues for the trainer, but are disabled for now since they are not yet tested.
 You can fork the repo and remove the environment constraint on the `EnvManager` class in `utils.py`, but you have been warned!
 
-## Improvements
+## Future Improvements
 
-- Support for non `Discrete` inputs
-- Support other, more state-of-the-art, RL algorithms especially since DQN is mostly obsolete today
+- [ ] Support for non `Discrete` inputs
+- [ ] Support other, more state-of-the-art, RL algorithms especially since DQN is mostly obsolete today
 
 ## References
 The training method implemented in this library is inspired from https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
