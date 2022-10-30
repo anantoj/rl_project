@@ -28,6 +28,11 @@ trainer = Trainer()
 trainer.train(model=resnet18())
 ```
 
+If you intend to use this library in Google Colab or Kaggle, import like this instead:
+```py
+from rl.project_rl_project.trainer import Trainer
+```
+
 
 ## Training Strategy
 
@@ -40,12 +45,12 @@ A separate **Target Network** is also used to act as a copy to the policy networ
 ## Supported environments
 Currently the only supported environments are `CartPole-v1`, `MountainCar-v0`, and `Acrobot-v1`. 
 Other environments (even outside of classic control) with `Discrete` inputs should theoritically not cause issues for the trainer, but are disabled for now since they are not yet tested.
-You can fork the repo and remove the environment constraint on the `EnvManager` class in `utils.py`, but you have been warned!
+If you wish to remove the environment constraint, you do so in the `EnvManager` class in `utils.py`.
 
 ## Future Improvements
 
 - [ ] Support for non `Discrete` inputs
-- [ ] Support other, more state-of-the-art, RL algorithms especially since DQN is mostly obsolete today
+- [ ] Support other, more state-of-the-art, Reinforcement Learning algorithms especially since DQN is mostly obsolete today
 
 ## References
 The training method implemented in this library is inspired from https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html

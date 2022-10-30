@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class ImageModel(nn.Module):
+class VisionModel(nn.Module):
     def __init__(self, in_features, out_features, image_model):
         """Initialize baseline DQN model architecture
 

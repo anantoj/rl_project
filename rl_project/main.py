@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torchvision.models import resnet18
 
 from networks.baseline_model import BaselineModel
-from networks.image_model import ImageModel
+from networks.image_model import VisionModel
 from utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
 
@@ -50,10 +50,10 @@ def main():
  
     # Initialize policy network and target network
 
-    # policy_net = ImageModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
+    # policy_net = VisionModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
     policy_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
 
-    # target_net = ImageModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
+    # target_net = VisionModel(env.num_state_features(), env.get_action_space(), resnet18()).to(device)
     target_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
 
     # Copy policy network weights for uniformity
