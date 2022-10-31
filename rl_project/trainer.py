@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class Trainer():
     def __init__(self, 
-            training_mode="pos", env="CartPole-v1", use_baseline=True, model=None,
+            training_mode="pos", env="CartPole-v1", model=None,
             batch_size=256, num_streaks=30, target_reward=195,
             max_timestep=500, discount_factor=0.95, update_freq=10, eps_start=1, 
             eps_end=0.01, eps_decay=0.001, memory_size=100000, learning_rate=0.001, 
@@ -34,7 +34,6 @@ class Trainer():
             raise ValueError("Available modes are 'pos' or 'img'")
 
         self.env = env
-        self.use_baseline = use_baseline
         self.model = model
         
         self.batch_size = batch_size
@@ -68,7 +67,7 @@ class Trainer():
     
         # Initialize policy network and target network
         
-        if self.use_baseline:
+        if self.model is None:
             policy_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
             target_net = BaselineModel(env.num_state_features(), env.get_action_space()).to(device)
         else:

@@ -21,7 +21,6 @@ class VisionModel(nn.Module):
         
         self.input = nn.Linear(in_features=self.in_features,
                              out_features=1*3*64*64)
-        
 
         if self.image_model.__class__.__name__ == "ResNet":
             self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)

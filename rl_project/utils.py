@@ -218,7 +218,6 @@ class EnvManager:
 class QValues:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    @staticmethod
     def get_current(policy_net, states, actions):
         """Use policy network to calculate state-action values for a batch of state-action pairs
 
@@ -243,9 +242,6 @@ class QValues:
             index=actions.unsqueeze(-1) # select the specific action
         )
         
-    
-
-    @staticmethod
     def get_next(target_net, next_states):
         """Use target network to calculate state-action values, specifically for non-terminal next states S'
 
