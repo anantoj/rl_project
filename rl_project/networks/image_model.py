@@ -21,12 +21,17 @@ class VisionModel(nn.Module):
         
         self.input = nn.Linear(in_features=self.in_features,
                              out_features=1*3*64*64)
-        try:
-            self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
-        except AttributeError:
-            # For ResNet
-            self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
+        
 
+        if self.image_model.__class__.__name__ == "ResNet":
+            self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
+        elif self.image_model.__class__.__name__ == "SwinTransformer":
+            self.image_model.head = nn.Linear(self.image_model.head.in_features,self.out_features)
+        elif self.image_model.__class__.__name__ = "VisionTransformer":
+            self.image_model.heads.head = nn.Linear(self.image_model.heads.head.in_features, self.out_features)
+        else:
+            self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
+    
 
     def forward(self, t) -> torch.Tensor:
         t = self.input(t)
