@@ -27,7 +27,7 @@ class Trainer():
             batch_size=256, num_streaks=30, target_reward=195,
             max_timestep=500, discount_factor=0.95, update_freq=10, eps_start=1, 
             eps_end=0.01, eps_decay=0.001, memory_size=100000, learning_rate=0.001, 
-            num_episodes=1000, render=False):
+            num_episodes=1000, render=False, verbose=True):
 
         self.training_mode = training_mode
         if self.training_mode not in ["pos", "img"]:
@@ -54,6 +54,7 @@ class Trainer():
         self.num_episodes= num_episodes
 
         self.render = render
+        self.verbose = verbose
 
     def train(self) -> None:
 
@@ -145,15 +146,17 @@ class Trainer():
                 # If episode is DONE or TRUNCATED, 
                 if env.done or timestep >= self.max_timestep:
                     all_rewards.append(episode_reward)
-                    print(f"Episode: {len(all_rewards)} | Episode Reward: {episode_reward}")
+                    if self.verbose:
+                        print(f"Episode: {len(all_rewards)} | Episode Reward: {episode_reward}")
                     break
-        
+
             # Update target_net with policy_net
             if episode % self.update_freq == 0:
                 target_net.load_state_dict(policy_net.state_dict())
 
             # Preemptively end training if target is reached
             if all([r >= self.target_reward for r in all_rewards[-self.num_streaks:]]):
+                print(f"Solved problem in {episode} episodes!")
                 break
 
     def extract_tensors(self, experiences: NamedTuple) -> Tuple[torch.TensorType]:
