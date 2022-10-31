@@ -11,7 +11,8 @@ cd rl_project && pip install -e .
 
 ## How to Use
 
-For baseline model: 
+For baseline model:
+
 ```py
 from rl_project.trainer import Trainer
 
@@ -20,6 +21,7 @@ trainer.train()
 ```
 
 For image models:
+
 ```py
 from torchvision.models import resnet18
 from rl_project.trainer import Trainer
@@ -29,10 +31,10 @@ trainer.train(model=resnet18())
 ```
 
 If you intend to use this library in Google Colab or Kaggle, import like this instead:
+
 ```py
 from rl.project_rl_project.trainer import Trainer
 ```
-
 
 ## Training Strategy
 
@@ -43,6 +45,7 @@ The training agent utilizes an **ε-greedy strategy** when selecting an action t
 A separate **Target Network** is also used to act as a copy to the policy network and are used to predict Q-Values to train the policy network. The target network will only be periodically updated every `UPDATE_FREQ` episodes with the policy network weights. This method of using a separate network is shown to make training more stable and prevent catastrophic forgetting in the policy network over a long run. 
 
 ## Supported environments
+
 Currently the only supported environments are `CartPole-v1`, `MountainCar-v0`, and `Acrobot-v1`. 
 Other environments (even outside of classic control) with `Discrete` inputs should theoritically not cause issues for the trainer, but are disabled for now since they are not yet tested.
 If you wish to remove the environment constraint, you do so in the `EnvManager` class in `utils.py`.
@@ -53,4 +56,5 @@ If you wish to remove the environment constraint, you do so in the `EnvManager` 
 - [ ] Support other, more state-of-the-art, Reinforcement Learning algorithms especially since DQN is mostly obsolete today
 
 ## References
+
 The training method implemented in this library is inspired from https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
