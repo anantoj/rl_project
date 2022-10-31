@@ -22,7 +22,7 @@ class VisionModel(nn.Module):
         self.input = nn.Linear(in_features=self.in_features,
                              out_features=1*3*64*64)
         try:
-            self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier.in_features, self.out_features)
+            self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
         except AttributeError:
             # For ResNet
             self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
