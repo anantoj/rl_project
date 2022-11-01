@@ -26,8 +26,8 @@ For image models:
 from torchvision.models import resnet18
 from rl_project.trainer import Trainer
 
-trainer = Trainer()
-trainer.train(model=resnet18())
+trainer = Trainer(model=resnet18())
+trainer.train()
 ```
 
 If you intend to use this library in Google Colab or Kaggle, import like this instead:
