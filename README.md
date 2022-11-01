@@ -44,7 +44,7 @@ The training agent utilizes an **ε-greedy strategy** when selecting an action t
 
 A separate **Target Network** is also used to act as a copy to the policy network and are used to predict Q-Values to train the policy network. The target network will only be periodically updated every `UPDATE_FREQ` episodes with the policy network weights. This method of using a separate network is shown to make training more stable and prevent catastrophic forgetting in the policy network over a long run (usually resembled by sine-wave-like reward-episode plot).
 
-## Supported environments
+## Supported OpenAI Gym Environments
 
 Currently the only supported environments are `CartPole-v1`, `MountainCar-v0`, and `Acrobot-v1`. 
 Other environments (even outside of classic control) with `Discrete` inputs should theoritically not cause issues for the trainer, but are disabled for now since they are not yet tested.
@@ -54,6 +54,7 @@ If you wish to remove the environment constraint, you do so in the `EnvManager` 
 
 - [ ] Support for non `Discrete` inputs
 - [ ] Support other, more state-of-the-art, Reinforcement Learning algorithms especially since DQN is mostly obsolete today
+- [ ] Support for Vision Transformer
 
 ## References
 

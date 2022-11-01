@@ -26,8 +26,6 @@ class VisionModel(nn.Module):
             self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
         elif self.image_model.__class__.__name__ == "SwinTransformer":
             self.image_model.head = nn.Linear(self.image_model.head.in_features,self.out_features)
-        elif self.image_model.__class__.__name__ == "VisionTransformer":
-            self.image_model.heads.head = nn.Linear(self.image_model.heads.head.in_features, self.out_features)
         else:
             self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
     
