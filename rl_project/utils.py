@@ -170,7 +170,7 @@ class EnvManager:
 
         return self.env.action_space.n
 
-    def take_action(self, action: torch.Tensor) -> Tuple(torch.Tensor, torch.Tensor):
+    def take_action(self, action: torch.Tensor) -> Tuple[torch.TensorType]:
         """Applies an action into the environment, update the current state,
             and return the rewards received
 

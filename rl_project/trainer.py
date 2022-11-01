@@ -172,7 +172,7 @@ class Trainer:
                     all_rewards.append(episode_reward)
                     if self.verbose:
                         print(
-                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards)}"
+                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)}"
                         )
                     break
 
@@ -181,7 +181,7 @@ class Trainer:
                 target_net.load_state_dict(policy_net.state_dict())
 
             # Preemptively end training if target is reached
-            if self.get_average_reward(all_rewards) >= self.target_reward:
+            if self.get_average_reward(all_rewards, self.num_streaks) >= self.target_reward:
                 print(f"Solved problem in {episode} episodes!")
                 break
 
@@ -211,7 +211,7 @@ class Trainer:
         Parameters
         ----------
         experiences : NamedTuple
-            Experience namedtuple of (state, action, reward, next_state)
+            Experience namedtuple of (state, action, reward, next_state, done)
 
         Returns
         -------
