@@ -1,6 +1,6 @@
 import random
 import math
-from typing import List
+from typing import List, Tuple
 import torch
 import torchvision.transforms as T
 import gym
@@ -27,7 +27,7 @@ class ReplayMemory:
         Parameters
         ----------
         experience : Experience
-            SARS Experience namedtuple
+            SARS-d Experience namedtuple
         """
         self.memory.append(experience)
 
@@ -170,7 +170,7 @@ class EnvManager:
 
         return self.env.action_space.n
 
-    def take_action(self, action: torch.Tensor) -> torch.Tensor:
+    def take_action(self, action: torch.Tensor) -> Tuple(torch.Tensor, torch.Tensor):
         """Applies an action into the environment, update the current state,
             and return the rewards received
 
@@ -181,12 +181,12 @@ class EnvManager:
 
         Returns
         -------
-        torch.Tensor
-            tensor of shape (1) containing the reward received
+        Tuple(torch.Tensor, torch.Tensor)
+            Tuple containing reward tensor and done status tensor
         """
 
         self.current_state, reward, self.done, _, _ = self.env.step(action.item())
-        return torch.tensor([reward], device=self.device)
+        return torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
 
     def get_state(self) -> torch.Tensor:
         """Returns current state
@@ -241,7 +241,7 @@ class QValues:
             index=actions.unsqueeze(-1),  # select the specific action
         )
 
-    def get_next(target_net, next_states):
+    def get_next(target_net, next_states, dones):
         """Use target network to calculate state-action values, specifically for non-terminal next states S'
 
         Parameters
@@ -250,19 +250,18 @@ class QValues:
             Target Network
         next_states : torch.Tensor
             Tensor of size (batch_size, env_obs_space) containing transitioned states S' from memory
+        dones: torch.Tensor
+            Tensor of size (batch_size) denoting terminality of each state in S'
 
         Returns
         -------
         torch.Tensor
             Tensor of size (batch_size) containing Q-values for each
         """
-        # find location of terminal states in S' batch
-        terminal_states_location = (
-            next_states.flatten(start_dim=1).max(dim=1)[0].eq(0).type(torch.bool)
-        )
+        # find location of non-terminal states in S' batch
+        non_terminal_states_locations = (dones == False)
 
         # select non-terminal states
-        non_terminal_states_locations = terminal_states_location == False
         non_terminal_states = next_states[non_terminal_states_locations]
 
         # initialize zeros tensor of size (batch_size)

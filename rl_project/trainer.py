@@ -1,9 +1,9 @@
 import gym
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from typing import List
 
 from typing import NamedTuple, Tuple
 from collections import namedtuple
@@ -12,7 +12,7 @@ from .networks.baseline_model import BaselineModel
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
-Experience = namedtuple("Experience", ("state", "action", "reward", "next_state"))
+Experience = namedtuple("Experience", ("state", "action", "reward", "next_state", "done"))
 
 # Ignore OpenAI Depracation Warning
 import warnings
@@ -27,10 +27,10 @@ class Trainer:
         env="CartPole-v1",
         model=None,
         batch_size=256,
-        num_streaks=30,
+        num_streaks=100,
         target_reward=195,
         max_timestep=500,
-        discount_factor=0.95,
+        discount_factor=0.999,
         update_freq=10,
         eps_start=1,
         eps_end=0.01,
@@ -97,6 +97,9 @@ class Trainer:
 
         # Copy policy network weights for uniformity
         target_net.load_state_dict(policy_net.state_dict())
+
+        # target net only for inference
+        target_net.eval()
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
 
         all_rewards = []
@@ -124,14 +127,14 @@ class Trainer:
                 action = agent.select_action(state, policy_net)
 
                 # Apply action and accumulate reward
-                reward = env.take_action(action)
+                reward, done = env.take_action(action)
                 episode_reward += reward.item()
 
                 # Record state that is the resultant of action taken
                 next_states = env.get_state()
 
-                # Save Experience of SARS
-                memory.push(Experience(state, action, reward, next_states))
+                # Save Experience of SARS-d
+                memory.push(Experience(state, action, reward, next_states, done))
                 state = next_states
 
                 # Learn
@@ -140,7 +143,7 @@ class Trainer:
                     experiences = memory.sample(self.batch_size)
 
                     # Convert experience to tensors
-                    states, actions, rewards, next_states = self.extract_tensors(
+                    states, actions, rewards, next_states, dones= self.extract_tensors(
                         experiences
                     )
 
@@ -150,7 +153,7 @@ class Trainer:
                     current_q_values = QValues.get_current(policy_net, states, actions)
 
                     # use target network to calculate state-action values Q(S') for next state S'
-                    next_q_values = QValues.get_next(target_net, next_states)
+                    next_q_values = QValues.get_next(target_net, next_states, dones)
 
                     # R + y*V(S')
                     expected_q_values = rewards + (self.discount_factor * next_q_values)
@@ -169,7 +172,7 @@ class Trainer:
                     all_rewards.append(episode_reward)
                     if self.verbose:
                         print(
-                            f"Episode: {len(all_rewards)} | Episode Reward: {episode_reward}"
+                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards)}"
                         )
                     break
 
@@ -178,12 +181,18 @@ class Trainer:
                 target_net.load_state_dict(policy_net.state_dict())
 
             # Preemptively end training if target is reached
-            if all([r >= self.target_reward for r in all_rewards[-self.num_streaks :]]):
+            if self.get_average_reward(all_rewards) >= self.target_reward:
                 print(f"Solved problem in {episode} episodes!")
                 break
 
+    def get_average_reward(self, reward_list: List) -> int:
+        if len(reward_list) < self.num_streaks:
+            return 0
+
+        return sum(reward_list[-self.num_streaks :]) / self.num_streaks
+
     def extract_tensors(self, experiences: NamedTuple) -> Tuple[torch.TensorType]:
-        """Convert list of Experience into tensors for each component of SARS
+        """Convert list of Experience into tensors for each component of SARS-d
 
         Parameters
         ----------
@@ -193,7 +202,7 @@ class Trainer:
         Returns
         -------
         Tuple[torch.TensorType]
-            Tuple of size 4 containing SARS Tensors with length batch_size sample
+            Tuple of size 5 containing SARS-d Tensors with length batch_size sample
         """
         batch = Experience(*zip(*experiences))
 
@@ -203,5 +212,6 @@ class Trainer:
         t_actions = torch.cat(batch.action)
         t_next_state = torch.stack(batch.next_state)
         t_rewards = torch.cat(batch.reward)
+        t_dones = torch.cat(batch.done)
 
-        return (t_states, t_actions, t_rewards, t_next_state)
+        return (t_states, t_actions, t_rewards, t_next_state, t_dones)
