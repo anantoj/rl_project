@@ -58,4 +58,4 @@ If you wish to remove the environment constraint, you do so in the `EnvManager` 
 
 ## References
 
-The training method implemented in this library is inspired from https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+The training method implemented in this library is inspired from [DQN Tutorial from PyTorch](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
