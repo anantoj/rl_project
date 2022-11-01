@@ -185,11 +185,25 @@ class Trainer:
                 print(f"Solved problem in {episode} episodes!")
                 break
 
-    def get_average_reward(self, reward_list: List) -> int:
-        if len(reward_list) < self.num_streaks:
+    def get_average_reward(self, reward_list: List, num_streaks: int) -> int:
+        """Calculates the mean reward from the most recent n-episodes 
+
+        Parameters
+        ----------
+        reward_list : List
+            List of all rewards obtained
+        num_streaks : int
+            Most recent n-episodes to take
+
+        Returns
+        -------
+        int
+            average reward
+        """
+        if len(reward_list) < num_streaks:
             return 0
 
-        return sum(reward_list[-self.num_streaks :]) / self.num_streaks
+        return sum(reward_list[-num_streaks :]) / num_streaks
 
     def extract_tensors(self, experiences: NamedTuple) -> Tuple[torch.TensorType]:
         """Convert list of Experience into tensors for each component of SARS-d
