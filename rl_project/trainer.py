@@ -9,7 +9,7 @@ from typing import List
 from typing import NamedTuple, Tuple
 from collections import namedtuple
 
-from .networks.baseline_model import BaselineModel
+from .networks.baseline_model import BaselineModel, BaselineImageModel
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
@@ -81,28 +81,28 @@ class Trainer:
         # Initialize policy network and target network
 
         if self.model is None:
-            policy_net = BaselineModel(
-                env.num_state_features(), env.get_action_space()
-            ).to(device)
-            target_net = BaselineModel(
-                env.num_state_features(), env.get_action_space()
-            ).to(device)
+            # policy_net = BaselineModel(
+            #     env.num_state_features(), env.get_action_space()
+            # ).to(device)
+            # target_net = BaselineModel(
+            #     env.num_state_features(), env.get_action_space()
+            # ).to(device)
+
+            policy_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
+            target_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
+
         else:
             if self.mode == "pos":
                 policy_net = VisionModel(
-                    env.num_state_features(), env.get_action_space(), self.model
+                    self.model, env.num_state_features(), env.get_action_space()
                 ).to(device)
                 target_net = VisionModel(
-                    env.num_state_features(), env.get_action_space(), self.model
+                    self.model, env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = self.model
-                policy_net.fc = nn.Linear(policy_net.fc.in_features, env.get_action_space()) 
-                policy_net = policy_net.to(device)
-
-                target_net = self.model
-                target_net.fc = nn.Linear(target_net.fc.in_features, env.get_action_space())
-                target_net = policy_net.to(device)
+                policy_net = VisionModel(self.model, mode="img", out_features=env.get_action_space()).to(device)
+                target_net = VisionModel(self.model, mode="img", out_features=env.get_action_space()).to(device)
+                
         # Copy policy network weights for uniformity
         target_net.load_state_dict(policy_net.state_dict())
 
@@ -121,7 +121,6 @@ class Trainer:
 
             # Initialize the starting state.
             state = env.get_state()
-
             timestep = 0
             episode_reward = 0
 
