@@ -260,7 +260,7 @@ class EnvManager:
         screen = torch.from_numpy(screen)
         transforms = T.Compose([
             T.ToPILImage(),
-            T.Resize(40,90),
+            T.Resize((40,90)),
             T.ToTensor()
         ])
 
