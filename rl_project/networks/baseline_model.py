@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class BaselineModel(nn.Module):
-    def __init__(self, in_features, out_features, ):
+    def __init__(self, in_features, out_features):
         """Initialize baseline DQN model architecture
 
         Parameters

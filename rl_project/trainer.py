@@ -1,6 +1,7 @@
 import gym
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from typing import List
@@ -19,11 +20,9 @@ import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-
 class Trainer:
     def __init__(
         self,
-        training_mode="pos",
         env="CartPole-v1",
         model=None,
         batch_size=256,
@@ -40,12 +39,9 @@ class Trainer:
         num_episodes=1000,
         render=False,
         verbose=True,
+        mode="pos"
     ):
-
-        self.training_mode = training_mode
-        if self.training_mode not in ["pos", "img"]:
-            raise ValueError("Available modes are 'pos' or 'img'")
-
+        
         self.env = env
         self.model = model
 
@@ -68,14 +64,18 @@ class Trainer:
         self.render = render
         self.verbose = verbose
 
+        self.mode = mode
+        if self.mode not in ["pos", "img"]:
+            raise ValueError("Available modes are 'pos' or 'img'")
+
     def train(self) -> None:
 
         assert gym.__version__ == "0.25.2", "OpenAI Gym version is not 0.25.2"
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        env = EnvManager(self.env, device)
+        env = EnvManager(self.env, device, self.mode)
         strategy = EpsilonGreedyStrategy(self.eps_start, self.eps_end, self.eps_decay)
-        agent = Agent(strategy, env.get_action_space(), device)
+        agent = Agent(strategy, env.get_action_space(), device, self.mode)
         memory = ReplayMemory(self.memory_size)
 
         # Initialize policy network and target network
@@ -88,13 +88,21 @@ class Trainer:
                 env.num_state_features(), env.get_action_space()
             ).to(device)
         else:
-            policy_net = VisionModel(
-                env.num_state_features(), env.get_action_space(), self.model
-            ).to(device)
-            target_net = VisionModel(
-                env.num_state_features(), env.get_action_space(), self.model
-            ).to(device)
+            if self.mode == "pos":
+                policy_net = VisionModel(
+                    env.num_state_features(), env.get_action_space(), self.model
+                ).to(device)
+                target_net = VisionModel(
+                    env.num_state_features(), env.get_action_space(), self.model
+                ).to(device)
+            elif self.mode == "img":
+                policy_net = self.model
+                policy_net.fc = nn.Linear(policy_net.fc.in_features, env.get_action_space()) 
+                policy_net = policy_net.to(device)
 
+                target_net = self.model
+                target_net.fc = nn.Linear(target_net.fc.in_features, env.get_action_space())
+                target_net = policy_net.to(device)
         # Copy policy network weights for uniformity
         target_net.load_state_dict(policy_net.state_dict())
 
@@ -220,11 +228,16 @@ class Trainer:
         """
         batch = Experience(*zip(*experiences))
 
-        t_states = torch.stack(
-            batch.state
-        )  # use stack instead of cat because each state is array
+        if self.mode == "pos":
+             # use stack instead of cat because each state is 1-d array
+            t_states = torch.stack(batch.state) 
+            t_next_state = torch.stack(batch.next_state)
+    
+        elif self.mode == "img":
+            t_states = torch.cat(batch.state)
+            t_next_state = torch.cat(batch.next_state)
+    
         t_actions = torch.cat(batch.action)
-        t_next_state = torch.stack(batch.next_state)
         t_rewards = torch.cat(batch.reward)
         t_dones = torch.cat(batch.done)
 

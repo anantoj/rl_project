@@ -5,6 +5,7 @@ import torch
 import torchvision.transforms as T
 import gym
 from collections import deque
+import numpy as np
 
 
 class ReplayMemory:
@@ -86,12 +87,13 @@ class EpsilonGreedyStrategy:
 
 
 class Agent:
-    def __init__(self, strategy, num_actions: int, device):
+    def __init__(self, strategy, num_actions: int, device, mode="pos"):
 
         self.strategy = strategy
         self.num_actions = num_actions
         self.current_step = 0
         self.device = device
+        self.mode = mode
 
     def select_action(self, state: torch.Tensor, policy_net) -> torch.Tensor:
         """Select an action to be applied to the environment using Epsilon Greedy.
@@ -119,16 +121,14 @@ class Agent:
             return torch.tensor([action]).to(device=self.device)  # explore
         else:  # exploit
             with torch.no_grad():
-                return (
-                    policy_net(state)
-                    .unsqueeze(dim=0)
-                    .argmax(dim=1)
-                    .to(device=self.device)
-                )
+                if self.mode == "pos":
+                    return policy_net(state).unsqueeze(dim=0).argmax(dim=1).to(device=self.device)
+                elif self.mode == "img":
+                    return policy_net(state).argmax(dim=1).to(self.device) 
 
 
 class EnvManager:
-    def __init__(self, env: str, device):
+    def __init__(self, env: str, device, mode="pos"):
 
         supported_envs = ["CartPole-v1", "Acrobot-v1", "MountainCar-v0"]
 
@@ -139,11 +139,17 @@ class EnvManager:
         self.env = gym.make(env, new_step_api=False).unwrapped
         self.env.reset()
         self.current_state = None
+        self.current_screen = None
         self.done = False
+        self.mode = mode
 
     def reset(self) -> None:
         """Resets the environment to initial state"""
-        self.current_state = self.env.reset()
+        if self.mode == "pos":
+            self.current_state = self.env.reset()
+        elif self.mode == "img":
+            self.env.reset()
+            self.current_screen = None
 
     def close(self) -> None:
         """Closes the environment"""
@@ -157,7 +163,7 @@ class EnvManager:
         mode : str, optional
             rendering mode, by default 'human'
         """
-        self.env.render(mode)
+        return self.env.render(mode)
 
     def get_action_space(self) -> int:
         """_summary_
@@ -185,7 +191,11 @@ class EnvManager:
             Tuple containing reward tensor and done status tensor
         """
 
-        self.current_state, reward, self.done, _, _ = self.env.step(action.item())
+        
+        if self.mode == "pos":
+            self.current_state, reward, self.done, _, _ = self.env.step(action.item())
+        elif self.mode == "img":
+            _, reward, self.done, _, _ = self.env.step(action.item())
         return torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
 
     def get_state(self) -> torch.Tensor:
@@ -196,12 +206,30 @@ class EnvManager:
         torch.Tensor
             State tensor with size corresponding to observation space
         """
-        if self.done:
-            return torch.zeros_like(
-                torch.tensor(self.current_state, device=self.device)
-            ).float()
-        else:
-            return torch.tensor(self.current_state, device=self.device).float()
+        if self.mode == "pos":
+            if self.done:
+                return torch.zeros_like(
+                    torch.tensor(self.current_state, device=self.device)
+                ).float()
+            else:
+                return torch.tensor(self.current_state, device=self.device).float()
+        
+        elif self.mode == "img":
+            # if start or terminal state
+            if self.just_starting() or self.done:
+                # return black screen (image tensor of zeros)
+                self.current_screen = self.get_processed_screen()
+                black_screen = torch.zeros_like(self.current_screen)
+                return black_screen
+            else:
+                # current screen
+                s1 = self.current_screen
+                # call a new screen (the next screen)
+                s2 = self.get_processed_screen()
+                # make the next screen is the current screen
+                self.current_screen = s2
+                # return the difference between two screens to get the current state
+                return s2 - s1
 
     def num_state_features(self) -> int:
         """Returns the environment observation space
@@ -213,6 +241,38 @@ class EnvManager:
         """
         return self.env.observation_space.shape[0]
 
+    def just_starting(self) -> bool:
+        """Checks if we are in a start state
+
+        Returns
+        -------
+        bool
+            start state status
+        """
+        return self.current_screen is None
+
+
+    def get_processed_screen(self):
+
+        screen = self.render('rgb_array').transpose((2, 0, 1))
+        screen = self.crop_screen(screen)
+        screen = np.ascontiguousarray(screen,dtype=np.float32)
+        screen = torch.from_numpy(screen)
+        transforms = T.Compose([
+            T.ToPILImage(),
+            T.Resize(40,90),
+            T.ToTensor()
+        ])
+
+        return transforms(screen).unsqueeze(0).to(self.device)
+
+    def crop_screen(self, screen):
+        screen_height = screen.shape[1]
+        top = int(screen_height * 0.4)
+        bottom = int(screen_height * 0.8)
+        screen = screen[:, top:bottom, :]
+
+        return screen
 
 class QValues:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
