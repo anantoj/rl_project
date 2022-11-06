@@ -132,7 +132,7 @@ class Trainer:
 
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
-
+                    
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 episode_reward += reward.item()
@@ -189,7 +189,7 @@ class Trainer:
                     all_rewards.append(episode_reward)
                     if self.verbose:
                         print(
-                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)}"
+                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
                         )
                     break
 

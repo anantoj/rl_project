@@ -35,9 +35,7 @@ class VisionModel(nn.Module):
             elif self.image_model.__class__.__name__ == "SwinTransformer":
                 self.image_model.head = nn.Linear(self.image_model.head.in_features,self.out_features)
             else:
-                print(self.image_model.classifier[len(self.image_model.classifier)-1].in_features)
-                # self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
-                self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(1280, 2)
+                self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
 
     def forward(self, t) -> torch.Tensor:
         if self.mode=="pos":
@@ -47,9 +45,9 @@ class VisionModel(nn.Module):
                 t = torch.reshape(t,(t.shape[0],3,64,64))
             else:
                 t = torch.reshape(t,(1,3,64,64))
-            # t = self.image_model(t)
-            # return torch.squeeze(t, 0)
-            return self.image_model(t)
+
+            t = self.image_model(t)
+            return torch.squeeze(t, 0)
 
         elif self.mode == "img":
             # t = self.image_model(t)
