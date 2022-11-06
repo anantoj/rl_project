@@ -167,13 +167,23 @@ class Trainer:
                     expected_q_values = rewards + (self.discount_factor * next_q_values)
 
                     # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
-                    loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
+                    # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
 
-                    # Update policy_net weights from loss
-                    loss.backward()
-                    optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
+                    # # Update policy_net weights from loss
+                    # loss.backward()
+                    # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
 
+                    # optimizer.zero_grad()
+
+                    criterion = nn.SmoothL1Loss()
+                    loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
+
+                    # Optimize the model
                     optimizer.zero_grad()
+                    loss.backward()
+                    for param in policy_net.parameters():
+                        param.grad.data.clamp_(-1, 1)
+                    optimizer.step()
 
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:
