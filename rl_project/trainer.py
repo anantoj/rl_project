@@ -6,6 +6,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from typing import List
 
+from collections import deque
+
 from typing import NamedTuple, Tuple
 from collections import namedtuple
 
@@ -113,20 +115,27 @@ class Trainer:
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
 
         all_rewards = []
+        mean_last = deque([0] * 20, 20)
 
         # For each episode:
         for episode in range(self.num_episodes):
-
+            
             # reset env
             env.reset()
             env.done = False
 
             # Initialize the starting state.
-            state = env.get_state()
+            # state = env.get_state()
             timestep = 0
             episode_reward = 0
 
+            init_screen = env.get_state()
+
+            screens = deque([init_screen] * 2, 2)
+            state = torch.cat(list(screens), dim=1)
+
             while not env.done or timestep < self.max_timestep:
+                
                 timestep += 1
 
                 if self.render:
@@ -134,65 +143,64 @@ class Trainer:
 
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
-                    
+
+                screens.append(env.get_state())
+
+                next_state = torch.cat(list(screens), dim=1) 
+
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 episode_reward += reward.item()
-                # print(reward)
-                # if env.done:
-                #     reward = reward - 20
-                #     print(reward)
+                # Record state that is the resultant of action taken
+                # next_states = env.get_state() 
+                # Save Experience of SARS-d
+                memory.push(Experience(state, action, reward, next_state, done))
+                state = next_state
 
                 
-                # Record state that is the resultant of action taken
-                next_states = env.get_state()
+                # Learn
+                if memory.can_provide_sample(self.batch_size):
+                    # Extract sample from memory queue if able to
+                    experiences = memory.sample(self.batch_size)
 
-                # Save Experience of SARS-d
-                memory.push(Experience(state, action, reward, next_states, done))
-                state = next_states
+                    # Convert experience to tensors
+                    states, actions, rewards, next_states, dones= self.extract_tensors(
+                        experiences
+                    )
+
+                    # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
+
+                    # use policy network to calculate state-action values Q(S) for current state S
+                    current_q_values = QValues.get_current(policy_net, states, actions)
+
+                    # use target network to calculate state-action values Q(S') for next state S'
+                    next_q_values = QValues.get_next(target_net, next_states, dones)
+
+                    # R + y*V(S')
+                    expected_q_values = rewards + (self.discount_factor * next_q_values)
+
+                    # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
+                    # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
+
+                    # # Update policy_net weights from loss
+                    # loss.backward()
+                    # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
+
+                    # optimizer.zero_grad()
+
+                    criterion = nn.SmoothL1Loss()
+                    loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
+
+                    # Optimize the model
+                    optimizer.zero_grad()
+                    loss.backward()
+                    for param in policy_net.parameters():
+                        param.grad.data.clamp_(-1, 1)
+                    optimizer.step()
+                    all_rewards.append(episode_reward)
 
                 # If episode is DONE or TRUNCATED,
-                if env.done or timestep >= self.max_timestep:
-                    # Learn
-                    if memory.can_provide_sample(self.batch_size):
-                        # Extract sample from memory queue if able to
-                        experiences = memory.sample(self.batch_size)
-
-                        # Convert experience to tensors
-                        states, actions, rewards, next_states, dones= self.extract_tensors(
-                            experiences
-                        )
-
-                        # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
-
-                        # use policy network to calculate state-action values Q(S) for current state S
-                        current_q_values = QValues.get_current(policy_net, states, actions)
-
-                        # use target network to calculate state-action values Q(S') for next state S'
-                        next_q_values = QValues.get_next(target_net, next_states, dones)
-
-                        # R + y*V(S')
-                        expected_q_values = rewards + (self.discount_factor * next_q_values)
-
-                        # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
-                        # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
-
-                        # # Update policy_net weights from loss
-                        # loss.backward()
-                        # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
-
-                        # optimizer.zero_grad()
-
-                        criterion = nn.SmoothL1Loss()
-                        loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
-
-                        # Optimize the model
-                        optimizer.zero_grad()
-                        loss.backward()
-                        for param in policy_net.parameters():
-                            param.grad.data.clamp_(-1, 1)
-                        optimizer.step()
-                        all_rewards.append(episode_reward)
+                if env.done or timestep >= self.max_timestep:            
                     if self.verbose:
                         print(
                             f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
