@@ -81,15 +81,17 @@ class Trainer:
         # Initialize policy network and target network
 
         if self.model is None:
-            # policy_net = BaselineModel(
-            #     env.num_state_features(), env.get_action_space()
-            # ).to(device)
-            # target_net = BaselineModel(
-            #     env.num_state_features(), env.get_action_space()
-            # ).to(device)
+            if self.mode == "pos":
 
-            policy_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
-            target_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
+                policy_net = BaselineModel(
+                    env.num_state_features(), env.get_action_space()
+                ).to(device)
+                target_net = BaselineModel(
+                    env.num_state_features(), env.get_action_space()
+                ).to(device)
+            elif self.mode == "img":
+                policy_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
+                target_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
 
         else:
             if self.mode == "pos":
@@ -136,7 +138,12 @@ class Trainer:
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 episode_reward += reward.item()
+                # print(reward)
+                # if env.done:
+                #     reward = reward - 20
+                #     print(reward)
 
+                
                 # Record state that is the resultant of action taken
                 next_states = env.get_state()
 
@@ -144,49 +151,48 @@ class Trainer:
                 memory.push(Experience(state, action, reward, next_states, done))
                 state = next_states
 
-                # Learn
-                if memory.can_provide_sample(self.batch_size):
-                    # Extract sample from memory queue if able to
-                    experiences = memory.sample(self.batch_size)
-
-                    # Convert experience to tensors
-                    states, actions, rewards, next_states, dones= self.extract_tensors(
-                        experiences
-                    )
-
-                    # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
-
-                    # use policy network to calculate state-action values Q(S) for current state S
-                    current_q_values = QValues.get_current(policy_net, states, actions)
-
-                    # use target network to calculate state-action values Q(S') for next state S'
-                    next_q_values = QValues.get_next(target_net, next_states, dones)
-
-                    # R + y*V(S')
-                    expected_q_values = rewards + (self.discount_factor * next_q_values)
-
-                    # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
-                    # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
-
-                    # # Update policy_net weights from loss
-                    # loss.backward()
-                    # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
-
-                    # optimizer.zero_grad()
-
-                    criterion = nn.SmoothL1Loss()
-                    loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
-
-                    # Optimize the model
-                    optimizer.zero_grad()
-                    loss.backward()
-                    for param in policy_net.parameters():
-                        param.grad.data.clamp_(-1, 1)
-                    optimizer.step()
-
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:
-                    all_rewards.append(episode_reward)
+                    # Learn
+                    if memory.can_provide_sample(self.batch_size):
+                        # Extract sample from memory queue if able to
+                        experiences = memory.sample(self.batch_size)
+
+                        # Convert experience to tensors
+                        states, actions, rewards, next_states, dones= self.extract_tensors(
+                            experiences
+                        )
+
+                        # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
+
+                        # use policy network to calculate state-action values Q(S) for current state S
+                        current_q_values = QValues.get_current(policy_net, states, actions)
+
+                        # use target network to calculate state-action values Q(S') for next state S'
+                        next_q_values = QValues.get_next(target_net, next_states, dones)
+
+                        # R + y*V(S')
+                        expected_q_values = rewards + (self.discount_factor * next_q_values)
+
+                        # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
+                        # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
+
+                        # # Update policy_net weights from loss
+                        # loss.backward()
+                        # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
+
+                        # optimizer.zero_grad()
+
+                        criterion = nn.SmoothL1Loss()
+                        loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
+
+                        # Optimize the model
+                        optimizer.zero_grad()
+                        loss.backward()
+                        for param in policy_net.parameters():
+                            param.grad.data.clamp_(-1, 1)
+                        optimizer.step()
+                        all_rewards.append(episode_reward)
                     if self.verbose:
                         print(
                             f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
