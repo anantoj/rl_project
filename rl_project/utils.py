@@ -197,8 +197,8 @@ class EnvManager:
         if self.mode == "pos":
             self.current_state, reward, self.done, _, _ = self.env.step(action.item())
         elif self.mode == "img":
-            _, reward, self.done, _, _ = self.env.step(action.item())
-        return torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
+            state_variables, reward, self.done, _, _ = self.env.step(action.item())
+        return state_variables, torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
 
     def get_state(self) -> torch.Tensor:
         """Returns current state

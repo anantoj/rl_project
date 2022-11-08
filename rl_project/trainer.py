@@ -149,8 +149,22 @@ class Trainer:
                 next_state = torch.cat(list(screens), dim=1) if not env.done else None
 
                 # Apply action and accumulate reward
-                reward, done = env.take_action(action)
-                episode_reward += reward.item()
+                state_variables, reward, done = env.take_action(action)
+
+                x, x_dot, theta, theta_dot = state_variables
+                r1 = (env.env.x_threshold - abs(x)) / env.env.x_threshold - 0.8
+                r2 = (env.env.theta_threshold_radians - abs(theta)) / env.env.theta_threshold_radians - 0.5
+                reward = r1 + r2
+                reward = torch.tensor([reward], device=device)
+                if timestep >= self.target_reward-1:
+                    reward = reward + 20
+                else: 
+                    if env.done:
+                        reward = reward - 20 
+
+                # episode_reward += reward.item()
+                episode_reward += 1
+
                 # Record state that is the resultant of action taken
                 # next_states = env.get_state() 
                 # Save Experience of SARS-d
