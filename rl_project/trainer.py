@@ -146,7 +146,7 @@ class Trainer:
 
                 screens.append(env.get_screen())
 
-                next_state = torch.cat(list(screens), dim=1) 
+                next_state = torch.cat(list(screens), dim=1) if not env.done else None
 
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
@@ -154,6 +154,7 @@ class Trainer:
                 # Record state that is the resultant of action taken
                 # next_states = env.get_state() 
                 # Save Experience of SARS-d
+
                 memory.push(Experience(state, action, reward, next_state, done))
                 state = next_state
 
@@ -259,7 +260,8 @@ class Trainer:
     
         elif self.mode == "img":
             t_states = torch.cat(batch.state)
-            t_next_state = torch.cat(batch.next_state)
+            # t_next_state = torch.cat(batch.next_state)
+            t_next_state = batch.next_state
     
         t_actions = torch.cat(batch.action)
         t_rewards = torch.cat(batch.reward)

@@ -358,17 +358,28 @@ class QValues:
             Tensor of size (batch_size) containing Q-values for each
         """
         # find location of non-terminal states in S' batch
-        non_terminal_states_locations = (dones == False)
+        # non_terminal_states_locations = (dones == False)
 
-        # select non-terminal states
-        non_terminal_states = next_states[non_terminal_states_locations]
+        # # select non-terminal states
+        # non_terminal_states = next_states[non_terminal_states_locations]
+        
+        # # initialize zeros tensor of size (batch_size)
+        # batch_size = next_states.shape[0]
+        # values = torch.zeros(batch_size).to(QValues.device)
 
-        # initialize zeros tensor of size (batch_size)
-        batch_size = next_states.shape[0]
-        values = torch.zeros(batch_size).to(QValues.device)
+        # # use target net to calculate q values for non-terminal states. Q values for terminal states are 0
+        # values[non_terminal_states_locations] = (
+        #     target_net(non_terminal_states).max(dim=1)[0].detach()
+        # )
+        # return values
 
-        # use target net to calculate q values for non-terminal states. Q values for terminal states are 0
-        values[non_terminal_states_locations] = (
-            target_net(non_terminal_states).max(dim=1)[0].detach()
-        )
-        return values
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
+                                          next_states)), dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in next_states
+                                                    if s is not None])
+
+        next_state_values = torch.zeros(256).to(QValues.device)
+        next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
+
+
+        return next_state_values
