@@ -115,7 +115,6 @@ class Agent:
         torch.Tensor
             action tensor
         """
-        print(state.shape)
         epsilon_rate = self.strategy.get_exploration_rate(self.current_step)
         self.current_step += 1  # update step to decay epsilon
 
