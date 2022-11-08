@@ -129,7 +129,7 @@ class Trainer:
             timestep = 0
             episode_reward = 0
 
-            init_screen = env.get_state()
+            init_screen = env.get_screen()
 
             screens = deque([init_screen] * 2, 2)
             state = torch.cat(list(screens), dim=1)
@@ -144,7 +144,7 @@ class Trainer:
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
 
-                screens.append(env.get_state())
+                screens.append(env.get_screen())
 
                 next_state = torch.cat(list(screens), dim=1) 
 
