@@ -329,7 +329,7 @@ class QValues:
         torch.Tensor
             Tensor of size (batch_size, 1) containing Q-values for each input state-action pair
         """
-        print(states.shape)
+        
         q_values = policy_net(states)
 
         return q_values.gather(  # only select q values for specific action (eg. if action is 0 then only choose q of index 0)

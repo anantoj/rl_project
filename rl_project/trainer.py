@@ -197,10 +197,11 @@ class Trainer:
                     for param in policy_net.parameters():
                         param.grad.data.clamp_(-1, 1)
                     optimizer.step()
-                    all_rewards.append(episode_reward)
 
+            
                 # If episode is DONE or TRUNCATED,
-                if env.done or timestep >= self.max_timestep:            
+                if env.done or timestep >= self.max_timestep:       
+                    all_rewards.append(episode_reward)     
                     if self.verbose:
                         print(
                             f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
