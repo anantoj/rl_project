@@ -197,8 +197,8 @@ class EnvManager:
         if self.mode == "pos":
             self.current_state, reward, self.done, _, _ = self.env.step(action.item())
         elif self.mode == "img":
-            state_variables, reward, self.done, _, _ = self.env.step(action.item())
-        return state_variables, torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
+            _, reward, self.done, _, _ = self.env.step(action.item())
+        return torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
 
     def get_state(self) -> torch.Tensor:
         """Returns current state
@@ -358,28 +358,18 @@ class QValues:
             Tensor of size (batch_size) containing Q-values for each
         """
         # find location of non-terminal states in S' batch
-        # non_terminal_states_locations = (dones == False)
+        non_terminal_states_locations = (dones == False)
 
-        # # select non-terminal states
-        # non_terminal_states = next_states[non_terminal_states_locations]
-        
-        # # initialize zeros tensor of size (batch_size)
-        # batch_size = next_states.shape[0]
-        # values = torch.zeros(batch_size).to(QValues.device)
+        # select non-terminal states
+        non_terminal_states = next_states[non_terminal_states_locations]
 
-        # # use target net to calculate q values for non-terminal states. Q values for terminal states are 0
-        # values[non_terminal_states_locations] = (
-        #     target_net(non_terminal_states).max(dim=1)[0].detach()
-        # )
-        # return values
+        # initialize zeros tensor of size (batch_size)
+        batch_size = next_states.shape[0]
 
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                          next_states)), dtype=torch.bool)
-        non_final_next_states = torch.cat([s for s in next_states
-                                                    if s is not None])
+        values = torch.zeros(batch_size).to(QValues.device)
 
-        next_state_values = torch.zeros(256).to(QValues.device)
-        next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
-
-
-        return next_state_values
+        # use target net to calculate q values for non-terminal states. Q values for terminal states are 0
+        values[non_terminal_states_locations] = (
+            target_net(non_terminal_states).max(dim=1)[0].detach()
+        )
+        return values
