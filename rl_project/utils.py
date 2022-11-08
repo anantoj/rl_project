@@ -280,15 +280,15 @@ class EnvManager:
 
         return screen
   
-    def get_screen(self, env):
+    def get_screen(self):
         # Returned screen requested by gym is 400x600x3, but is sometimes larger
         # such as 800x1200x3. Transpose it into torch order (CHW).
-        screen = env.render(mode='rgb_array').transpose((2, 0, 1))
+        screen = self.render(mode='rgb_array').transpose((2, 0, 1))
         # Cart is in the lower half, so strip off the top and bottom of the screen
         _, screen_height, screen_width = screen.shape
         screen = screen[:, int(screen_height*0.4):int(screen_height * 0.8)]
         view_width = int(screen_width * 0.6)
-        cart_location = env.get_cart_location(screen_width)
+        cart_location = self.get_cart_location(screen_width)
         if cart_location < view_width // 2:
             slice_range = slice(view_width)
         elif cart_location > (screen_width - view_width // 2):
@@ -329,7 +329,7 @@ class QValues:
         torch.Tensor
             Tensor of size (batch_size, 1) containing Q-values for each input state-action pair
         """
-        
+
         q_values = policy_net(states)
 
         return q_values.gather(  # only select q values for specific action (eg. if action is 0 then only choose q of index 0)
