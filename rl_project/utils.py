@@ -115,7 +115,7 @@ class Agent:
         torch.Tensor
             action tensor
         """
-
+        print(state.shape)
         epsilon_rate = self.strategy.get_exploration_rate(self.current_step)
         self.current_step += 1  # update step to decay epsilon
 
@@ -305,9 +305,13 @@ class EnvManager:
         # Resize, and add a batch dimension (BCHW)
         resize = T.Compose([T.ToPILImage(),
                     T.Resize(60, interpolation=Image.CUBIC),
-                    T.Grayscale(),
                     T.ToTensor()])
         return resize(screen).unsqueeze(0).to(self.device)
+
+    def get_cart_location(self,screen_width):
+        world_width = self.env.x_threshold * 2
+        scale = screen_width / world_width
+        return int(self.env.state[0] * scale + screen_width / 2.0)
 
 class QValues:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

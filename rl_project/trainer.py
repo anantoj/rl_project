@@ -92,8 +92,8 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
-                target_net = BaselineImageModel(40,90,env.get_action_space()).to(device)
+                policy_net = BaselineImageModel(60,135,env.get_action_space()).to(device)
+                target_net = BaselineImageModel(60,135,env.get_action_space()).to(device)
 
         else:
             if self.mode == "pos":
