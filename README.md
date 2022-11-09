@@ -1,6 +1,6 @@
 # Deep Q-Learning Vision Model Trainer
 
-This library is a Deep Q-Learning trainer, specialized for vision models, in various OpenAI Gym environments. It is developed as part of my Reinforcement Learning project to evaluate performances of image models in various Deep Q-Learning tasks.
+This library is a Deep Q-Learning trainer, specialized for vision models, in various OpenAI Gym environments. It is developed as part of my Reinforcement Learning project to evaluate performances of image models in various Deep Q-Learning tasks. 
 
 ## Installation
 
@@ -11,22 +11,24 @@ cd rl_project && pip install -e .
 
 ## How to Use
 
-For baseline model:
+There are two modes of training: `mode="pos"` and `mode="img"`. The `pos` mode will train your model using positioning or built-in features return from the OpenAI Gym environment. In contrast, the `img` mode will utilize the environment's rendered screen (as RGB array) as inputs to the models.
+
+For baseline model and train on position features:
 
 ```py
 from rl_project.trainer import Trainer
 
-trainer = Trainer()
+trainer = Trainer(mode="pos")
 trainer.train()
 ```
 
-For image models:
+For vision models and train on image features:
 
 ```py
 from torchvision.models import resnet18
 from rl_project.trainer import Trainer
 
-trainer = Trainer(model=resnet18())
+trainer = Trainer(mode="img", model=resnet18())
 trainer.train()
 ```
 
