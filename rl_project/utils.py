@@ -85,9 +85,9 @@ class EpsilonGreedyStrategy:
         """
 
         # Reference: https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
-        return self.eps_end + (self.eps_start - self.eps_end) * math.exp(
-            -1.0 * current_step * self.eps_decay
-        )
+        return self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * current_step / self.eps_decay)
+
+        
 
 
 class Agent:
@@ -218,24 +218,24 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            # if start or terminal state
-            if self.just_starting() or self.done:
-                # return black screen (image tensor of zeros)
-                self.current_screen = self.get_processed_screen()
-                black_screen = torch.zeros_like(self.current_screen)
-                return black_screen
-            else:
-                # current screen
-                s1 = self.current_screen
-                # call a new screen (the next screen)
-                s2 = self.get_processed_screen()
-                # make the next screen is the current screen
-                self.current_screen = s2
-                # return the difference between two screens to get the current state
-                # with open(f'images/{random.random()}.png', "wb") as f:
-                #     save_image(s2-s1,f)
-                return s2 - s1
+            return self.get_processed_screen()
+            # # if start or terminal state
+            # if self.just_starting() or self.done:
+            #     # return black screen (image tensor of zeros)
+            #     self.current_screen = self.get_processed_screen()
+            #     black_screen = torch.zeros_like(self.current_screen)
+            #     return black_screen
+            # else:
+            #     # current screen
+            #     s1 = self.current_screen
+            #     # call a new screen (the next screen)
+            #     s2 = self.get_processed_screen()
+            #     # make the next screen is the current screen
+            #     self.current_screen = s2
+            #     # return the difference between two screens to get the current state
+            #     return s2 - s1
 
+    
     def num_state_features(self) -> int:
         """Returns the environment observation space
 
@@ -265,6 +265,7 @@ class EnvManager:
         transforms = T.Compose([
             T.ToPILImage(),
             T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
+            T.Grayscale(),  
             T.ToTensor()
         ])
 

@@ -6,9 +6,9 @@ import torch.optim as optim
 from typing import List
 
 from typing import NamedTuple, Tuple
-from collections import namedtuple
+from collections import namedtuple, deque
 
-from .networks.baseline_model import BaselineModel, BaselineVisionModel
+from .networks.baseline_model import BaselineModel, BaselineVisionModel, BaselineVisionModelV2
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
@@ -30,9 +30,9 @@ class Trainer:
         max_timestep=500,
         discount_factor=0.999,
         update_freq=10,
-        eps_start=1,
+        eps_start=0.9,
         eps_end=0.01,
-        eps_decay=0.001,
+        eps_decay=3000,
         memory_size=100000,
         learning_rate=0.001,
         num_episodes=1000,
@@ -89,10 +89,10 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineVisionModel(
+                policy_net = BaselineVisionModelV2(
                    60,135, env.get_action_space()
                 ).to(device)
-                target_net = BaselineVisionModel(
+                target_net = BaselineVisionModelV2(
                    60,135, env.get_action_space()
                 ).to(device)
 
@@ -124,8 +124,13 @@ class Trainer:
             env.reset()
             env.done = False
 
+            
             # Initialize the starting state.
-            state = env.get_state()
+            # state = env.get_state()
+
+            init_screen = env.get_state()
+            screens = deque([init_screen] * 2, 2)
+            state = torch.cat(list(screens), dim=1)
             timestep = 0
             episode_reward = 0
 
@@ -134,22 +139,25 @@ class Trainer:
 
                 if self.render:
                     env.render()
-
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
 
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 
+                screens.append(env.get_state())
+
+                next_state = torch.cat(list(screens), dim=1)
+
                 episode_reward += reward.item()
 
                 # Record state that is the resultant of action taken
-                next_states = env.get_state()
+                # next_state = env.get_state()
 
                 # Save Experience of SARS-d
-                memory.push(Experience(state, action, reward, next_states, done))
+                memory.push(Experience(state, action, reward, next_state, done))
 
-                state = next_states
+                state = next_state
 
                 # Optimize model when we can sample from memory queue
                 if memory.can_provide_sample(self.batch_size):
