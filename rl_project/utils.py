@@ -232,7 +232,8 @@ class EnvManager:
                 # make the next screen is the current screen
                 self.current_screen = s2
                 # return the difference between two screens to get the current state
-                deque()
+                # with open(f'images/{random.random()}.png', "wb") as f:
+                #     save_image(s2-s1,f)
                 return s2 - s1
 
     def num_state_features(self) -> int:
@@ -263,7 +264,7 @@ class EnvManager:
         screen = torch.from_numpy(screen)
         transforms = T.Compose([
             T.ToPILImage(),
-            T.Resize(64, interpolation=InterpolationMode.BICUBIC),
+            T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
             T.ToTensor()
         ])
 

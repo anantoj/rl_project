@@ -3,15 +3,12 @@ import gym
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 from typing import List
-
-from collections import deque
 
 from typing import NamedTuple, Tuple
 from collections import namedtuple
 
-from .networks.baseline_model import BaselineModel
+from .networks.baseline_model import BaselineModel, BaselineVisionModel
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
@@ -92,7 +89,12 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                raise NotImplementedError("Baseline vision model not yet implemented. Please provide your own vision model")
+                policy_net = BaselineVisionModel(
+                   60,135, env.get_action_space()
+                ).to(device)
+                target_net = BaselineVisionModel(
+                   60,135, env.get_action_space()
+                ).to(device)
 
         else:
             if self.mode == "pos":
@@ -111,7 +113,8 @@ class Trainer:
 
         # target net only for inference
         target_net.eval()
-        optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
+
+        optimizer = optim.RMSprop(params=policy_net.parameters(), lr=self.learning_rate)
 
         all_rewards = []
 
