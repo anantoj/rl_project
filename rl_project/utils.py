@@ -7,6 +7,7 @@ import gym
 from collections import deque
 import numpy as np
 from PIL import Image
+from torchvision.transforms.functional import InterpolationMode
 
 from torchvision.utils import save_image
 
@@ -217,24 +218,22 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            self.current_screen = self.get_processed_screen()
-            return self.current_screen
-            # # if start or terminal state
-            # if self.just_starting() or self.done:
-            #     # return black screen (image tensor of zeros)
-            #     self.current_screen = self.get_processed_screen()
-            #     black_screen = torch.zeros_like(self.current_screen)
-            #     return black_screen
-            # else:
-            #     # current screen
-            #     s1 = self.current_screen
-            #     # call a new screen (the next screen)
-            #     s2 = self.get_processed_screen()
-            #     # make the next screen is the current screen
-            #     self.current_screen = s2
-            #     # return the difference between two screens to get the current state
-            #     deque()
-            #     return s2 - s1
+            # if start or terminal state
+            if self.just_starting() or self.done:
+                # return black screen (image tensor of zeros)
+                self.current_screen = self.get_processed_screen()
+                black_screen = torch.zeros_like(self.current_screen)
+                return black_screen
+            else:
+                # current screen
+                s1 = self.current_screen
+                # call a new screen (the next screen)
+                s2 = self.get_processed_screen()
+                # make the next screen is the current screen
+                self.current_screen = s2
+                # return the difference between two screens to get the current state
+                deque()
+                return s2 - s1
 
     def num_state_features(self) -> int:
         """Returns the environment observation space
@@ -258,14 +257,13 @@ class EnvManager:
 
 
     def get_processed_screen(self):
-
         screen = self.render('rgb_array').transpose((2, 0, 1))
         screen = self.crop_screen(screen)
         screen = np.ascontiguousarray(screen,dtype=np.float32)
         screen = torch.from_numpy(screen)
         transforms = T.Compose([
             T.ToPILImage(),
-            T.Resize((40,90)),
+            T.Resize(64, interpolation=InterpolationMode.BICUBIC),
             T.ToTensor()
         ])
 
@@ -278,39 +276,6 @@ class EnvManager:
         screen = screen[:, top:bottom, :]
 
         return screen
-  
-    def get_screen(self):
-        # Returned screen requested by gym is 400x600x3, but is sometimes larger
-        # such as 800x1200x3. Transpose it into torch order (CHW).
-        screen = self.render(mode='rgb_array').transpose((2, 0, 1))
-        # Cart is in the lower half, so strip off the top and bottom of the screen
-        _, screen_height, screen_width = screen.shape
-        screen = screen[:, int(screen_height*0.4):int(screen_height * 0.8)]
-        view_width = int(screen_width * 0.6)
-        cart_location = self.get_cart_location(screen_width)
-        if cart_location < view_width // 2:
-            slice_range = slice(view_width)
-        elif cart_location > (screen_width - view_width // 2):
-            slice_range = slice(-view_width, None)
-        else:
-            slice_range = slice(cart_location - view_width // 2,
-                                cart_location + view_width // 2)
-        # Strip off the edges, so that we have a square image centered on a cart
-        screen = screen[:, :, slice_range]
-        # Convert to float, rescale, convert to torch tensor
-        # (this doesn't require a copy)
-        screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
-        screen = torch.from_numpy(screen)
-        # Resize, and add a batch dimension (BCHW)
-        resize = T.Compose([T.ToPILImage(),
-                    T.Resize(60, interpolation=Image.CUBIC),
-                    T.ToTensor()])
-        return resize(screen).unsqueeze(0).to(self.device)
-
-    def get_cart_location(self,screen_width):
-        world_width = self.env.x_threshold * 2
-        scale = screen_width / world_width
-        return int(self.env.state[0] * scale + screen_width / 2.0)
 
 class QValues:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

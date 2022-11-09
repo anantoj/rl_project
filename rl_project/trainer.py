@@ -11,7 +11,7 @@ from collections import deque
 from typing import NamedTuple, Tuple
 from collections import namedtuple
 
-from .networks.baseline_model import BaselineModel, BaselineImageModel
+from .networks.baseline_model import BaselineModel
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
@@ -20,7 +20,7 @@ Experience = namedtuple("Experience", ("state", "action", "reward", "next_state"
 # Ignore OpenAI Depracation Warning
 import warnings
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore")
 
 class Trainer:
     def __init__(
@@ -92,8 +92,7 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineImageModel(60,135,env.get_action_space()).to(device)
-                target_net = BaselineImageModel(60,135,env.get_action_space()).to(device)
+                raise NotImplementedError("Baseline vision model not yet implemented. Please provide your own vision model")
 
         else:
             if self.mode == "pos":
@@ -115,27 +114,19 @@ class Trainer:
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
 
         all_rewards = []
-        mean_last = deque([0] * 20, 20)
 
         # For each episode:
         for episode in range(self.num_episodes):
-            
             # reset env
             env.reset()
             env.done = False
 
             # Initialize the starting state.
-            # state = env.get_state()
+            state = env.get_state()
             timestep = 0
             episode_reward = 0
 
-            init_screen = env.get_screen()
-
-            screens = deque([init_screen] * 2, 2)
-            state = torch.cat(list(screens), dim=1)
-
             while not env.done or timestep < self.max_timestep:
-                
                 timestep += 1
 
                 if self.render:
@@ -144,24 +135,22 @@ class Trainer:
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
 
-                screens.append(env.get_screen())
-
-                next_state = torch.cat(list(screens), dim=1)
-
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
-                episode_reward += reward.item()
-                # Record state that is the resultant of action taken
-                # next_states = env.get_state() 
-                # Save Experience of SARS-d
-
-                memory.push(Experience(state, action, reward, next_state, done))
-                state = next_state
-
                 
-                # Learn
+                episode_reward += reward.item()
+
+                # Record state that is the resultant of action taken
+                next_states = env.get_state()
+
+                # Save Experience of SARS-d
+                memory.push(Experience(state, action, reward, next_states, done))
+
+                state = next_states
+
+                # Optimize model when we can sample from memory queue
                 if memory.can_provide_sample(self.batch_size):
-                    # Extract sample from memory queue if able to
+
                     experiences = memory.sample(self.batch_size)
 
                     # Convert experience to tensors
@@ -176,7 +165,7 @@ class Trainer:
 
                     # use target network to calculate state-action values Q(S') for next state S'
                     next_q_values = QValues.get_next(target_net, next_states, dones)
-
+                    
                     # R + y*V(S')
                     expected_q_values = rewards + (self.discount_factor * next_q_values)
 
@@ -261,7 +250,6 @@ class Trainer:
         elif self.mode == "img":
             t_states = torch.cat(batch.state)
             t_next_state = torch.cat(batch.next_state)
-            # t_next_state = batch.next_state
     
         t_actions = torch.cat(batch.action)
         t_rewards = torch.cat(batch.reward)

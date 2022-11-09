@@ -50,6 +50,4 @@ class VisionModel(nn.Module):
             return torch.squeeze(t, 0)
 
         elif self.mode == "img":
-            # t = self.image_model(t)
-            # return torch.squeeze(t, 0)
             return self.image_model(t)
