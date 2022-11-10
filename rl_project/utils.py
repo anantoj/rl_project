@@ -343,7 +343,7 @@ class QValues:
         """
 
         q_values = policy_net(states)
-        
+
         return q_values.gather(  # only select q values for specific action (eg. if action is 0 then only choose q of index 0)
             1,  # action dim
             actions,  # select the specific action

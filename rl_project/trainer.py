@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from typing import List
+import torch.functional as F
 
 from typing import NamedTuple, Tuple
 from collections import namedtuple, deque
@@ -189,9 +190,10 @@ class Trainer:
 
                     # optimizer.zero_grad()
 
-                    criterion = nn.SmoothL1Loss()
-                    loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
-
+                    # criterion = nn.SmoothL1Loss()
+                    
+                    # loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
+                    loss = F.smooth_l1_loss(current_q_values, next_q_values.unsqueeze(1))
                     # Optimize the model
                     optimizer.zero_grad()
                     loss.backward()
@@ -202,10 +204,10 @@ class Trainer:
             
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:       
-                    all_rewards.append(episode_reward)     
+                    all_rewards.append(timestep)     
                     if self.verbose:
                         print(
-                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
+                            f"Episode: {len(all_rewards)} | Reward: {timestep} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
                         )
                     break
 
