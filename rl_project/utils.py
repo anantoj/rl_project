@@ -120,14 +120,20 @@ class Agent:
         self.current_step += 1  # update step to decay epsilon
 
         if random.random() < epsilon_rate:  # explore
-            action = random.randrange(self.num_actions)
-            return torch.tensor([action]).to(device=self.device)  # explore
+            return torch.tensor([[random.randrange(self.num_actions)]], device=self.device, dtype=torch.long)
+            # action = random.randrange(self.num_actions)
+            # return torch.tensor([action]).to(device=self.device)  
+
         else:  # exploit
             with torch.no_grad():
+            # t.max(1) will return largest column value of each row.
+            # second column on max result is index of where max element was
+            # found, so we pick action with the larger expected reward.
                 if self.mode == "pos":
                     return policy_net(state).unsqueeze(dim=0).argmax(dim=1).to(device=self.device)
                 elif self.mode == "img":
-                    return policy_net(state).argmax(dim=1).to(self.device) 
+                    return policy_net(state).max(1)[1].view(1, 1)
+                    # return policy_net(state).argmax(dim=1).to(self.device) 
 
 
 class EnvManager:
@@ -337,10 +343,10 @@ class QValues:
         """
 
         q_values = policy_net(states)
-
+        
         return q_values.gather(  # only select q values for specific action (eg. if action is 0 then only choose q of index 0)
-            dim=1,  # action dim
-            index=actions.unsqueeze(-1),  # select the specific action
+            1,  # action dim
+            actions,  # select the specific action
         )
 
     def get_next(target_net, next_states, dones):
