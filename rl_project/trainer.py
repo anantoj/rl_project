@@ -82,7 +82,6 @@ class Trainer:
 
         if self.model is None:
             if self.mode == "pos":
-
                 policy_net = BaselineModel(
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
@@ -125,13 +124,8 @@ class Trainer:
             env.reset()
             env.done = False
 
-            
             # Initialize the starting state.
-            # state = env.get_state()
-
-            init_screen = env.get_state()
-            screens = deque([init_screen] * 2, 2)
-            state = torch.cat(list(screens), dim=1)
+            state = env.get_state()
             timestep = 0
             episode_reward = 0
 
@@ -140,25 +134,22 @@ class Trainer:
 
                 if self.render:
                     env.render()
+
                 # Select an to take action using policy network
                 action = agent.select_action(state, policy_net)
 
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 
-                screens.append(env.get_state())
-
-                next_state = torch.cat(list(screens), dim=1)
-
                 episode_reward += reward.item()
 
                 # Record state that is the resultant of action taken
-                # next_state = env.get_state()
+                next_states = env.get_state()
 
                 # Save Experience of SARS-d
-                memory.push(Experience(state, action, reward, next_state, done))
+                memory.push(Experience(state, action, reward, next_states, done))
 
-                state = next_state
+                state = next_states
                 
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:     
@@ -191,9 +182,6 @@ class Trainer:
 
                         # optimizer.zero_grad()
 
-                        # criterion = nn.SmoothL1Loss()
-                        
-                        # loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
                         loss = F.smooth_l1_loss(current_q_values, expected_q_values.unsqueeze(1))
                         # Optimize the model
                         optimizer.zero_grad()

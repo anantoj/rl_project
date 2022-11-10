@@ -220,7 +220,24 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            return self.get_screen()
+            # if start or terminal state
+            if self.just_starting() or self.done:
+                # return black screen (image tensor of zeros)
+                self.current_screen = self.get_screen()
+                black_screen = torch.zeros_like(self.current_screen)
+                return black_screen
+            else:
+                # current screen
+                s1 = self.current_screen
+                # call a new screen (the next screen)
+                s2 = self.get_screen()
+                # make the next screen is the current screen
+                self.current_screen = s2
+                # return the difference between two screens to get the current state
+                with open(f'rl_project/images/{random.random()}.png', "wb") as f:
+                    save_image(s2-s1,f)
+                return s2 - s1
+                
             # # if start or terminal state
             # if self.just_starting() or self.done:
             #     # return black screen (image tensor of zeros)
