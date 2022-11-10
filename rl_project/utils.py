@@ -302,7 +302,7 @@ class EnvManager:
     def get_processed_screen(self):
         screen = self.render('rgb_array').transpose((2, 0, 1))
         screen = self.crop_screen(screen)
-        screen = np.ascontiguousarray(screen,dtype=np.float32)
+        screen = np.ascontiguousarray(screen,dtype=np.float32) / 255
         screen = torch.from_numpy(screen)
         transforms = T.Compose([
             T.ToPILImage(),
