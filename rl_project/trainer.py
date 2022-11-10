@@ -197,7 +197,7 @@ class Trainer:
                         # criterion = nn.SmoothL1Loss()
                         
                         # loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
-                        loss = F.smooth_l1_loss(current_q_values, next_q_values.unsqueeze(1))
+                        loss = F.smooth_l1_loss(current_q_values, expected_q_values.unsqueeze(1))
                         # Optimize the model
                         optimizer.zero_grad()
                         loss.backward()
