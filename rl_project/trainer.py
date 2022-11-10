@@ -148,6 +148,7 @@ class Trainer:
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
                 
+                # Record state that is the resultant of action taken
                 if self.mode == "pos":
                     next_state = env.get_state()
                 elif self.mode == "img":
@@ -155,9 +156,6 @@ class Trainer:
                     next_state = torch.cat(list(screens), dim=1)
 
                 episode_reward += reward.item()
-
-                # Record state that is the resultant of action taken
-                # next_state = env.get_state()
 
                 # Save Experience of SARS-d
                 memory.push(Experience(state, action, reward, next_state, done))
