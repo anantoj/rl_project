@@ -220,51 +220,17 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            # if start or terminal state
-            if self.just_starting() or self.done:
-                # return black screen (image tensor of zeros)
-                self.current_screen = self.get_screen()
-                black_screen = torch.zeros_like(self.current_screen)
-                return black_screen
-            else:
-                # current screen
-                s1 = self.current_screen
-                # call a new screen (the next screen)
-                s2 = self.get_screen()
-                # make the next screen is the current screen
-                self.current_screen = s2
-                # return the difference between two screens to get the current state
-                with open(f'rl_project/images/{random.random()}.png', "wb") as f:
-                    save_image(s2-s1,f)
-                return s2 - s1
-                
-            # # if start or terminal state
-            # if self.just_starting() or self.done:
-            #     # return black screen (image tensor of zeros)
-            #     self.current_screen = self.get_processed_screen()
-            #     black_screen = torch.zeros_like(self.current_screen)
-            #     return black_screen
-            # else:
-            #     # current screen
-            #     s1 = self.current_screen
-            #     # call a new screen (the next screen)
-            #     s2 = self.get_processed_screen()
-            #     # make the next screen is the current screen
-            #     self.current_screen = s2
-            #     # return the difference between two screens to get the current state
-            #     return s2 - s1
+            return self.get_screen()
+
 
     def get_cart_location(self, screen_width):
         world_width = self.env.x_threshold * 2
         scale = screen_width / world_width
         return int(self.env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
 
-    # Cropping, downsampling (and Grayscaling) image
+
     def get_screen(self):
-        # Returned screen requested by gym is 400x600x3, but is sometimes larger
-        # such as 800x1200x3. Transpose it into torch order (CHW).
         screen = self.render(mode='rgb_array').transpose((2, 0, 1))
-        # Cart is in the lower half, so strip off the top and bottom of the screen
         _, screen_height, screen_width = screen.shape
         screen = screen[:, int(screen_height*0.4):int(screen_height * 0.8)]
         view_width = int(screen_width * 0.6)
@@ -276,17 +242,13 @@ class EnvManager:
         else:
             slice_range = slice(cart_location - view_width // 2,
                                 cart_location + view_width // 2)
-        # Strip off the edges, so that we have a square image centered on a cart
         screen = screen[:, :, slice_range]
-        # Convert to float, rescale, convert to torch tensor
-        # (this doesn't require a copy)
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
         screen = torch.from_numpy(screen)
         # Resize, and add a batch dimension (BCHW)
         transforms = T.Compose([
             T.ToPILImage(),
             T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
-            # T.Grayscale(),  
             T.ToTensor()
         ])
         return transforms(screen).unsqueeze(0).to(self.device)

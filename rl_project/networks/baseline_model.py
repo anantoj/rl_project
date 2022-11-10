@@ -66,7 +66,7 @@ class BaselineVisionModel(nn.Module):
 class BaselineVisionModelV2(nn.Module):
     def __init__(self, h, w, outputs):
         super(BaselineVisionModelV2, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=5, stride=2)
+        self.conv1 = nn.Conv2d(6, 64, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(64)
