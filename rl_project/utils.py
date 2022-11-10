@@ -224,7 +224,7 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            return self.get_screen()
+            return self.get_processed_screen()
             # # if start or terminal state
             # if self.just_starting() or self.done:
             #     # return black screen (image tensor of zeros)
@@ -307,7 +307,7 @@ class EnvManager:
         transforms = T.Compose([
             T.ToPILImage(),
             T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
-            T.Grayscale(),  
+            # T.Grayscale(),  
             T.ToTensor()
         ])
 
