@@ -113,9 +113,9 @@ class Trainer:
         target_net.load_state_dict(policy_net.state_dict())
 
         # target net only for inference
-        target_net.eval()
+        target_net.eval()   
 
-        optimizer = optim.RMSprop(params=policy_net.parameters(), lr=self.learning_rate)
+        optimizer = optim.RMSprop(params=policy_net.parameters())
 
         all_rewards = []
 
@@ -160,51 +160,51 @@ class Trainer:
 
                 state = next_state
 
-                # # Optimize model when we can sample from memory queue
-                # if memory.can_provide_sample(self.batch_size):
-
-                #     experiences = memory.sample(self.batch_size)
-
-                #     # Convert experience to tensors
-                #     states, actions, rewards, next_states, dones= self.extract_tensors(
-                #         experiences
-                #     )
-
-                #     # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
-
-                #     # use policy network to calculate state-action values Q(S) for current state S
-                #     current_q_values = QValues.get_current(policy_net, states, actions)
-
-                #     # use target network to calculate state-action values Q(S') for next state S'
-                #     next_q_values = QValues.get_next(target_net, next_states, dones)
-                    
-                #     # R + y*V(S')
-                #     expected_q_values = rewards + (self.discount_factor * next_q_values)
-
-                #     # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
-                #     # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
-
-                #     # # Update policy_net weights from loss
-                #     # loss.backward()
-                #     # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
-
-                #     # optimizer.zero_grad()
-
-                #     # criterion = nn.SmoothL1Loss()
-                    
-                #     # loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
-                #     loss = F.smooth_l1_loss(current_q_values, next_q_values.unsqueeze(1))
-                #     # Optimize the model
-                #     optimizer.zero_grad()
-                #     loss.backward()
-                #     for param in policy_net.parameters():
-                #         param.grad.data.clamp_(-1, 1)
-                #     optimizer.step()
+               
 
             
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:     
-                    self.optimize_model(memory, device, policy_net, target_net, optimizer)  
+                     # Optimize model when we can sample from memory queue
+                    if memory.can_provide_sample(self.batch_size):
+                        experiences = memory.sample(self.batch_size)
+
+                        # Convert experience to tensors
+                        states, actions, rewards, next_states, dones= self.extract_tensors(
+                            experiences
+                        )
+
+                        # RECALL Q-Learning update formula: Q(S) = Q(S) + a[R + y*Q(S') - Q(S)], where a is lr and y is discount
+
+                        # use policy network to calculate state-action values Q(S) for current state S
+                        current_q_values = QValues.get_current(policy_net, states, actions)
+
+                        # use target network to calculate state-action values Q(S') for next state S'
+                        next_q_values = QValues.get_next(target_net, next_states, dones)
+                        
+                        # R + y*V(S')
+                        expected_q_values = rewards + (self.discount_factor * next_q_values)
+
+                        # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
+                        # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
+
+                        # # Update policy_net weights from loss
+                        # loss.backward()
+                        # optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
+
+                        # optimizer.zero_grad()
+
+                        # criterion = nn.SmoothL1Loss()
+                        
+                        # loss = criterion(current_q_values, expected_q_values.unsqueeze(1))
+                        loss = F.smooth_l1_loss(current_q_values, next_q_values.unsqueeze(1))
+                        # Optimize the model
+                        optimizer.zero_grad()
+                        loss.backward()
+                        for param in policy_net.parameters():
+                            param.grad.data.clamp_(-1, 1)
+                        optimizer.step()
+
                     all_rewards.append(timestep)     
                     if self.verbose:
                         print(
@@ -270,49 +270,3 @@ class Trainer:
         t_dones = torch.cat(batch.done)
 
         return (t_states, t_actions, t_rewards, t_next_state, t_dones)
-
-    def optimize_model(self,memory, device, policy_net, target_net, optimizer):
-        if not memory.can_provide_sample(self.batch_size):
-            return
-        transitions = memory.sample(self.batch_size)
-        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of Transitions
-        # to Transition of batch-arrays.
-        batch = Experience(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                            batch.next_state)), device=device, dtype=torch.bool)
-        non_final_next_states = torch.cat([s for s in batch.next_state
-                                                    if s is not None])
-        # torch.cat concatenates tensor sequence
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward).type(torch.FloatTensor).to(device)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to policy_net
-        state_action_values = policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based
-        # on the "older" target_net; selecting their best reward with max(1)[0].
-        # This is merged based on the mask, such that we'll have either the expected
-        # state value or 0 in case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=device)
-        next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.discount_factor) + reward_batch
-
-        # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-    #     wandb.log({'Loss:': loss})
-        print("loss: ", loss.item())
-        # Optimize the model
-        optimizer.zero_grad()
-        loss.backward()
-        for param in policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
-        optimizer.step()
