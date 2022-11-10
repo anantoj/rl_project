@@ -224,7 +224,7 @@ class EnvManager:
                 return torch.tensor(self.current_state, device=self.device).float()
         
         elif self.mode == "img":
-            return self.get_processed_screen()
+            return self.get_screen()
             # # if start or terminal state
             # if self.just_starting() or self.done:
             #     # return black screen (image tensor of zeros)
