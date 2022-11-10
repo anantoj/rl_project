@@ -273,7 +273,7 @@ class EnvManager:
         transforms = T.Compose([
             T.ToPILImage(),
             T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
-            T.Grayscale(),  
+            # T.Grayscale(),  
             T.ToTensor()
         ])
         return transforms(screen).unsqueeze(0).to(self.device)
