@@ -115,7 +115,7 @@ class Trainer:
         # target net only for inference
         target_net.eval()   
 
-        optimizer = optim.RMSprop(params=policy_net.parameters())
+        optimizer = optim.Adam(params=policy_net.parameters())
 
         all_rewards = []
 
@@ -160,9 +160,6 @@ class Trainer:
 
                 state = next_state
 
-               
-
-            
                 # If episode is DONE or TRUNCATED,
                 if env.done or timestep >= self.max_timestep:     
                      # Optimize model when we can sample from memory queue
