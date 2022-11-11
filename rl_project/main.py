@@ -8,5 +8,3 @@ from rl_project.trainer import Trainer
 
 acrobot_trainer = Trainer(mode="pos", env="Acrobot-v1", target_reward=-110)
 acrobot_trainer.train()
-
-

@@ -268,7 +268,7 @@ class EnvManager:
         """
         return self.env.observation_space.shape[0]
 
-    def get_screen(self, new_dim=(128,128)):
+    def get_screen(self, new_dim=(128, 128)):
         screen = self.render("rgb_array").transpose((2, 0, 1))
 
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255

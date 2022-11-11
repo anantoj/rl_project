@@ -42,7 +42,7 @@ class Trainer:
         render=False,
         verbose=True,
         mode="pos",
-        image_dim=(128,128)
+        image_dim=(128, 128),
     ):
 
         self.env = env
@@ -74,7 +74,7 @@ class Trainer:
         self.image_dim = image_dim
 
         if env == "CartPole-v1":
-            self.image_dim = (60,135)
+            self.image_dim = (60, 135)
 
     def train(self) -> None:
 
@@ -90,7 +90,6 @@ class Trainer:
 
         if self.model is None:
             if self.mode == "pos":
-
                 policy_net = BaselineModel(
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
@@ -98,12 +97,12 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineVisionModelV2(self.image_dim[0], self.image_dim[1], env.get_action_space()).to(
-                    device
-                )
-                target_net = BaselineVisionModelV2(self.image_dim[0], self.image_dim[1], env.get_action_space()).to(
-                    device
-                )
+                policy_net = BaselineVisionModelV2(
+                    self.image_dim[0], self.image_dim[1], env.get_action_space()
+                ).to(device)
+                target_net = BaselineVisionModelV2(
+                    self.image_dim[0], self.image_dim[1], env.get_action_space()
+                ).to(device)
 
         else:
             if self.mode == "pos":
@@ -139,7 +138,6 @@ class Trainer:
 
             # Initialize the starting state.
             if self.mode == "pos":
-
                 state = env.get_state()
             elif self.mode == "img":
                 start_screen = env.get_state()
