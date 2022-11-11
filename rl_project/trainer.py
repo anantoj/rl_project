@@ -1,7 +1,6 @@
 import gym
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from typing import List
 import torch.nn.functional as F
@@ -93,12 +92,12 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineVisionModelV2(
-                    60, 135, env.get_action_space()
-                ).to(device)
-                target_net = BaselineVisionModelV2(
-                    60, 135, env.get_action_space()
-                ).to(device)
+                policy_net = BaselineVisionModelV2(60, 135, env.get_action_space()).to(
+                    device
+                )
+                target_net = BaselineVisionModelV2(60, 135, env.get_action_space()).to(
+                    device
+                )
 
         else:
             if self.mode == "pos":

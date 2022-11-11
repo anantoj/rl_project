@@ -6,10 +6,7 @@ import torchvision.transforms as T
 import gym
 from collections import deque
 import numpy as np
-from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-
-from torchvision.utils import save_image
 
 
 class ReplayMemory:
