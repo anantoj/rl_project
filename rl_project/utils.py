@@ -85,9 +85,9 @@ class EpsilonGreedyStrategy:
         """
 
         # Reference: https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
-        return self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * current_step / self.eps_decay)
-
-        
+        return self.eps_end + (self.eps_start - self.eps_end) * math.exp(
+            -1.0 * current_step / self.eps_decay
+        )
 
 
 class Agent:
@@ -121,15 +121,19 @@ class Agent:
 
         if random.random() < epsilon_rate:  # explore
             action = random.randrange(self.num_actions)
-            return torch.tensor([action]).to(device=self.device)  
+            return torch.tensor([action]).to(device=self.device)
 
         else:  # exploit
             with torch.no_grad():
                 if self.mode == "pos":
-                    return policy_net(state).unsqueeze(dim=0).argmax(dim=1).to(device=self.device)
+                    return (
+                        policy_net(state)
+                        .unsqueeze(dim=0)
+                        .argmax(dim=1)
+                        .to(device=self.device)
+                    )
                 elif self.mode == "img":
-                    # return policy_net(state).max(1)[1].view(1, 1)
-                    return policy_net(state).argmax(dim=1).to(self.device) 
+                    return policy_net(state).argmax(dim=1).to(self.device)
 
 
 class EnvManager:
@@ -144,7 +148,6 @@ class EnvManager:
         self.env = gym.make(env, new_step_api=False).unwrapped
         self.env.reset()
         self.current_state = None
-        self.current_screen = None
         self.done = False
         self.mode = mode
 
@@ -154,7 +157,6 @@ class EnvManager:
             self.current_state = self.env.reset()
         elif self.mode == "img":
             self.env.reset()
-            self.current_screen = None
 
     def close(self) -> None:
         """Closes the environment"""
@@ -196,12 +198,13 @@ class EnvManager:
             Tuple containing reward tensor and done status tensor
         """
 
-        
         if self.mode == "pos":
             self.current_state, reward, self.done, _, _ = self.env.step(action.item())
         elif self.mode == "img":
             _, reward, self.done, _, _ = self.env.step(action.item())
-        return torch.tensor([reward], device=self.device), torch.tensor([self.done], device=self.device)
+        return torch.tensor([reward], device=self.device), torch.tensor(
+            [self.done], device=self.device
+        )
 
     def get_state(self) -> torch.Tensor:
         """Returns current state
@@ -218,21 +221,22 @@ class EnvManager:
                 ).float()
             else:
                 return torch.tensor(self.current_state, device=self.device).float()
-        
-        elif self.mode == "img":
-            return self.get_screen()
 
+        elif self.mode == "img":
+            if self.env.unwrapped.spec.id == "CartPole-v1":
+                return self.get_cartpole_screen()
+
+            return self.get_screen()
 
     def get_cart_location(self, screen_width):
         world_width = self.env.x_threshold * 2
         scale = screen_width / world_width
         return int(self.env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
 
-
-    def get_screen(self):
-        screen = self.render(mode='rgb_array').transpose((2, 0, 1))
+    def get_cartpole_screen(self):
+        screen = self.render(mode="rgb_array").transpose((2, 0, 1))
         _, screen_height, screen_width = screen.shape
-        screen = screen[:, int(screen_height*0.4):int(screen_height * 0.8)]
+        screen = screen[:, int(screen_height * 0.4) : int(screen_height * 0.8)]
         view_width = int(screen_width * 0.6)
         cart_location = self.get_cart_location(screen_width)
         if cart_location < view_width // 2:
@@ -240,17 +244,21 @@ class EnvManager:
         elif cart_location > (screen_width - view_width // 2):
             slice_range = slice(-view_width, None)
         else:
-            slice_range = slice(cart_location - view_width // 2,
-                                cart_location + view_width // 2)
+            slice_range = slice(
+                cart_location - view_width // 2, cart_location + view_width // 2
+            )
         screen = screen[:, :, slice_range]
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
         screen = torch.from_numpy(screen)
-        # Resize, and add a batch dimension (BCHW)
-        transforms = T.Compose([
-            T.ToPILImage(),
-            T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
-            T.ToTensor()
-        ])
+
+        transforms = T.Compose(
+            [
+                T.ToPILImage(),
+                T.Resize((60, 135), interpolation=InterpolationMode.BICUBIC),
+                T.ToTensor(),
+            ]
+        )
+
         return transforms(screen).unsqueeze(0).to(self.device)
 
     def num_state_features(self) -> int:
@@ -263,38 +271,27 @@ class EnvManager:
         """
         return self.env.observation_space.shape[0]
 
-    def just_starting(self) -> bool:
-        """Checks if we are in a start state
+    def get_screen(self):
+        screen = self.render("rgb_array").transpose((2, 0, 1))
 
-        Returns
-        -------
-        bool
-            start state status
-        """
-        return self.current_screen is None
-
-
-    def get_processed_screen(self):
-        screen = self.render('rgb_array').transpose((2, 0, 1))
-        screen = self.crop_screen(screen)
-        screen = np.ascontiguousarray(screen,dtype=np.float32) / 255
-        screen = torch.from_numpy(screen)
-        transforms = T.Compose([
-            T.ToPILImage(),
-            T.Resize((60,135), interpolation=InterpolationMode.BICUBIC),
-            # T.Grayscale(),  
-            T.ToTensor()
-        ])
-
-        return transforms(screen).unsqueeze(0).to(self.device)
-
-    def crop_screen(self, screen):
+        # crop screen
         screen_height = screen.shape[1]
         top = int(screen_height * 0.4)
         bottom = int(screen_height * 0.8)
         screen = screen[:, top:bottom, :]
 
-        return screen
+        screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
+        screen = torch.from_numpy(screen)
+        transforms = T.Compose(
+            [
+                T.ToPILImage(),
+                T.Resize((60, 135), interpolation=InterpolationMode.BICUBIC),
+                T.ToTensor(),
+            ]
+        )
+
+        return transforms(screen).unsqueeze(0).to(self.device)
+
 
 class QValues:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -342,7 +339,7 @@ class QValues:
             Tensor of size (batch_size) containing Q-values for each
         """
         # find location of non-terminal states in S' batch
-        non_terminal_states_locations = (dones == False)
+        non_terminal_states_locations = dones == False
 
         # select non-terminal states
         non_terminal_states = next_states[non_terminal_states_locations]

@@ -9,16 +9,19 @@ import torch.nn.functional as F
 from typing import NamedTuple, Tuple
 from collections import namedtuple, deque
 
-from .networks.baseline_model import BaselineModel, BaselineVisionModel, BaselineVisionModelV2
+from .networks.baseline_model import BaselineModel, BaselineVisionModelV2
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 
-Experience = namedtuple("Experience", ("state", "action", "reward", "next_state", "done"))
+Experience = namedtuple(
+    "Experience", ("state", "action", "reward", "next_state", "done")
+)
 
 # Ignore OpenAI Depracation Warning
 import warnings
 
 warnings.filterwarnings("ignore")
+
 
 class Trainer:
     def __init__(
@@ -39,9 +42,9 @@ class Trainer:
         num_episodes=1000,
         render=False,
         verbose=True,
-        mode="pos"
+        mode="pos",
     ):
-        
+
         self.env = env
         self.model = model
 
@@ -91,10 +94,10 @@ class Trainer:
                 ).to(device)
             elif self.mode == "img":
                 policy_net = BaselineVisionModelV2(
-                   60,135, env.get_action_space()
+                    60, 135, env.get_action_space()
                 ).to(device)
                 target_net = BaselineVisionModelV2(
-                   60,135, env.get_action_space()
+                    60, 135, env.get_action_space()
                 ).to(device)
 
         else:
@@ -106,14 +109,18 @@ class Trainer:
                     self.model, env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = VisionModel(self.model, mode="img", out_features=env.get_action_space()).to(device)
-                target_net = VisionModel(self.model, mode="img", out_features=env.get_action_space()).to(device)
-                
+                policy_net = VisionModel(
+                    self.model, mode="img", out_features=env.get_action_space()
+                ).to(device)
+                target_net = VisionModel(
+                    self.model, mode="img", out_features=env.get_action_space()
+                ).to(device)
+
         # Copy policy network weights for uniformity
         target_net.load_state_dict(policy_net.state_dict())
 
         # target net only for inference
-        target_net.eval()   
+        target_net.eval()
 
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
 
@@ -124,7 +131,7 @@ class Trainer:
             # reset env
             env.reset()
             env.done = False
-            
+
             # Initialize the starting state.
             if self.mode == "pos":
 
@@ -147,7 +154,7 @@ class Trainer:
 
                 # Apply action and accumulate reward
                 reward, done = env.take_action(action)
-                
+
                 # Record state that is the resultant of action taken
                 if self.mode == "pos":
                     next_state = env.get_state()
@@ -161,19 +168,22 @@ class Trainer:
                 memory.push(Experience(state, action, reward, next_state, done))
 
                 state = next_state
-                
+
                 if self.mode == "pos":
                     self.optimize(memory, policy_net, target_net, optimizer)
 
                 # If episode is DONE or TRUNCATED,
-                if env.done or timestep >= self.max_timestep:    
+                if env.done or timestep >= self.max_timestep:
                     if self.mode == "img":
                         self.optimize(memory, policy_net, target_net, optimizer)
 
-                    all_rewards.append(timestep)     
+                    all_rewards.append(episode_reward)
                     if self.verbose:
                         print(
-                            f"Episode: {len(all_rewards)} | Reward: {episode_reward} | Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | current exp rate: {strategy.get_exploration_rate(agent.current_step)} "
+                            f"Episode: {len(all_rewards)} | "
+                            f"Reward: {episode_reward} | "
+                            f"Average reward in {self.num_streaks} episodes : {self.get_average_reward(all_rewards,self.num_streaks)} | "
+                            f"current exp rate: {strategy.get_exploration_rate(agent.current_step)}"
                         )
                     break
 
@@ -182,8 +192,12 @@ class Trainer:
                 target_net.load_state_dict(policy_net.state_dict())
 
             # Preemptively end training if target is reached
-            if self.get_average_reward(all_rewards, self.num_streaks) >= self.target_reward:
-                print(f"Solved problem in {episode} episodes!")
+            if (
+                len(all_rewards) >= self.num_streaks
+                and self.get_average_reward(all_rewards, self.num_streaks)
+                >= self.target_reward
+            ):
+                print(f"Solved {self.env.unwrapped.spec.id} in {episode} episodes!")
                 break
 
     def optimize(self, memory, policy_net, target_net, optimizer):
@@ -191,7 +205,7 @@ class Trainer:
             experiences = memory.sample(self.batch_size)
 
             # Convert experience to tensors
-            states, actions, rewards, next_states, dones= self.extract_tensors(
+            states, actions, rewards, next_states, dones = self.extract_tensors(
                 experiences
             )
 
@@ -202,24 +216,23 @@ class Trainer:
 
             # use target network to calculate state-action values Q(S') for next state S'
             next_q_values = QValues.get_next(target_net, next_states, dones)
-            
+
             # R + y*V(S')
             expected_q_values = rewards + (self.discount_factor * next_q_values)
-            
+
             # Calculate loss between output Q-values and target Q-values. [R + y*Q(S') - Q(S)]
             loss = F.smooth_l1_loss(current_q_values, expected_q_values.unsqueeze(1))
-            # loss = F.mse_loss(current_q_values, expected_q_values.unsqueeze(1))
 
             # Update policy_net weights from loss
-            optimizer.zero_grad() 
+            optimizer.zero_grad()
             loss.backward()
             for param in policy_net.parameters():
                 param.grad.data.clamp_(-1, 1)
-            optimizer.step() # Q(S) + a[R + y*Q(S') - Q(S)]
+            optimizer.step()  # Q(S) + a[R + y*Q(S') - Q(S)]
         return
 
     def get_average_reward(self, reward_list: List, num_streaks: int) -> int:
-        """Calculates the mean reward from the most recent n-episodes 
+        """Calculates the mean reward from the most recent n-episodes
 
         Parameters
         ----------
@@ -234,9 +247,9 @@ class Trainer:
             average reward
         """
         if len(reward_list) < num_streaks:
-            return 0
+            return round(sum(reward_list) / len(reward_list), 2)
 
-        return sum(reward_list[-num_streaks :]) / num_streaks
+        return sum(reward_list[-num_streaks:]) / num_streaks
 
     def extract_tensors(self, experiences: NamedTuple) -> Tuple[torch.TensorType]:
         """Convert list of Experience into tensors for each component of SARS-d
@@ -254,14 +267,14 @@ class Trainer:
         batch = Experience(*zip(*experiences))
 
         if self.mode == "pos":
-             # use stack instead of cat because each state is 1-d array
-            t_states = torch.stack(batch.state) 
+            # use stack instead of cat because each state is 1-d array
+            t_states = torch.stack(batch.state)
             t_next_state = torch.stack(batch.next_state)
-    
+
         elif self.mode == "img":
             t_states = torch.cat(batch.state)
             t_next_state = torch.cat(batch.next_state)
-    
+
         t_actions = torch.cat(batch.action)
         t_rewards = torch.cat(batch.reward)
         t_dones = torch.cat(batch.done)

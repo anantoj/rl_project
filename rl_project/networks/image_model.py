@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class VisionModel(nn.Module):
     def __init__(self, image_model, in_features=None, out_features=None, mode="pos"):
         """Initialize baseline DQN model architecture
@@ -9,7 +10,7 @@ class VisionModel(nn.Module):
         Parameters
         ----------
         in_features : int
-            Number of input features 
+            Number of input features
         out_features : int
             Number of output features corresponding to the environment action space
         """
@@ -17,34 +18,41 @@ class VisionModel(nn.Module):
         self.image_model = image_model
         self.mode = mode
         self.in_features = in_features
-        self.out_features= out_features
+        self.out_features = out_features
         if mode == "pos":
-            
-            self.input = nn.Linear(in_features=self.in_features,
-                                out_features=1*3*64*64)
+            self.input = nn.Linear(
+                in_features=self.in_features, out_features=1 * 3 * 64 * 64
+            )
 
             if self.image_model.__class__.__name__ == "ResNet":
-                self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
+                self.image_model.fc = nn.Linear(
+                    self.image_model.fc.in_features, self.out_features
+                )
             elif self.image_model.__class__.__name__ == "SwinTransformer":
-                self.image_model.head = nn.Linear(self.image_model.head.in_features,self.out_features)
+                self.image_model.head = nn.Linear(
+                    self.image_model.head.in_features, self.out_features
+                )
             else:
-                self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
-        if mode == "img":
-            if self.image_model.__class__.__name__ == "ResNet":
-                self.image_model.fc = nn.Linear(self.image_model.fc.in_features, self.out_features)
-            elif self.image_model.__class__.__name__ == "SwinTransformer":
-                self.image_model.head = nn.Linear(self.image_model.head.in_features,self.out_features)
-            else:
-                self.image_model.classifier[len(self.image_model.classifier)-1] = nn.Linear(self.image_model.classifier[len(self.image_model.classifier)-1].in_features, self.out_features)
+                self.image_model.classifier[
+                    len(self.image_model.classifier) - 1
+                ] = nn.Linear(
+                    self.image_model.classifier[
+                        len(self.image_model.classifier) - 1
+                    ].in_features,
+                    self.out_features,
+                )
+
+        elif mode == "img":
+            raise NotImplementedError("Vision Model wrapper not yet implemented")
 
     def forward(self, t) -> torch.Tensor:
-        if self.mode=="pos":
+        if self.mode == "pos":
             t = self.input(t)
             if len(t.shape) > 1:
                 # Replay Memory sample, batch_size > 1
-                t = torch.reshape(t,(t.shape[0],3,64,64))
+                t = torch.reshape(t, (t.shape[0], 3, 64, 64))
             else:
-                t = torch.reshape(t,(1,3,64,64))
+                t = torch.reshape(t, (1, 3, 64, 64))
 
             t = self.image_model(t)
             return torch.squeeze(t, 0)
