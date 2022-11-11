@@ -268,21 +268,15 @@ class EnvManager:
         """
         return self.env.observation_space.shape[0]
 
-    def get_screen(self):
+    def get_screen(self, new_dim=(128,128)):
         screen = self.render("rgb_array").transpose((2, 0, 1))
-
-        # crop screen
-        screen_height = screen.shape[1]
-        top = int(screen_height * 0.4)
-        bottom = int(screen_height * 0.8)
-        screen = screen[:, top:bottom, :]
 
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
         screen = torch.from_numpy(screen)
         transforms = T.Compose(
             [
                 T.ToPILImage(),
-                T.Resize((60, 135), interpolation=InterpolationMode.BICUBIC),
+                T.Resize(new_dim, interpolation=InterpolationMode.BICUBIC),
                 T.ToTensor(),
             ]
         )

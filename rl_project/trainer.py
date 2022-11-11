@@ -42,6 +42,7 @@ class Trainer:
         render=False,
         verbose=True,
         mode="pos",
+        image_dim=(128,128)
     ):
 
         self.env = env
@@ -70,9 +71,14 @@ class Trainer:
         if self.mode not in ["pos", "img"]:
             raise ValueError("Available modes are 'pos' or 'img'")
 
+        self.image_dim = image_dim
+
+        if env == "CartPole-v1":
+            self.image_dim = (60,135)
+
     def train(self) -> None:
 
-        assert gym.__version__ == "0.25.2", "OpenAI Gym version is not 0.25.2"
+        assert gym.__version__ == "0.25.2", "OpenAI Gym version is must be 0.25.2"
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         env = EnvManager(self.env, device, self.mode)
@@ -92,10 +98,10 @@ class Trainer:
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineVisionModelV2(60, 135, env.get_action_space()).to(
+                policy_net = BaselineVisionModelV2(self.image_dim[0], self.image_dim[1], env.get_action_space()).to(
                     device
                 )
-                target_net = BaselineVisionModelV2(60, 135, env.get_action_space()).to(
+                target_net = BaselineVisionModelV2(self.image_dim[0], self.image_dim[1], env.get_action_space()).to(
                     device
                 )
 
