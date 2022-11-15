@@ -127,8 +127,7 @@ class Trainer:
         target_net.eval()
         
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
-        print(type(policy_net))
-        print(type(optimizer))
+        
         all_rewards = []
 
         # For each episode:
