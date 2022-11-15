@@ -89,7 +89,6 @@ class EpsilonGreedyStrategy:
 
 class Agent:
     def __init__(self, strategy, num_actions: int, device, mode="pos"):
-
         self.strategy = strategy
         self.num_actions = num_actions
         self.current_step = 0
@@ -226,11 +225,36 @@ class EnvManager:
             return self.get_screen()
 
     def get_cart_location(self, screen_width):
+        """Returns the current location of the cart on the screen
+        Reference: https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+
+        Parameters
+        ----------
+        screen_width : int
+            width of screen (or input image) we are using
+
+        Returns
+        -------
+        int
+            scaled location of cart from the environemnt state
+        """
+
         world_width = self.env.x_threshold * 2
         scale = screen_width / world_width
-        return int(self.env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
+        return int(self.env.state[0] * scale + screen_width / 2.0)
 
-    def get_cartpole_screen(self):
+    def get_cartpole_screen(self) -> torch.Tensor:
+        """Helper function to capture and return the current screen as the environment state.
+        Note: This function is only specific to the CartPole-v1 environment, providing better
+        stability during training.
+
+        Returns
+        -------
+        torch.Tensor
+            current screen image tensor
+        """
+        # Reference: https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+
         screen = self.render(mode="rgb_array").transpose((2, 0, 1))
         _, screen_height, screen_width = screen.shape
         screen = screen[:, int(screen_height * 0.4) : int(screen_height * 0.8)]
@@ -268,7 +292,19 @@ class EnvManager:
         """
         return self.env.observation_space.shape[0]
 
-    def get_screen(self, new_dim=(128, 128)):
+    def get_screen(self, new_dim=(128, 128)) -> torch.Tensor:
+        """Helper function to capture and return the current screen as the environment state.
+
+        Parameters
+        ----------
+        new_dim : tuple, optional
+            dimension (h,w) of input image or screen capture, by default (128, 128)
+
+        Returns
+        -------
+        torch.Tensor
+            current screen image tensor
+        """
         screen = self.render("rgb_array").transpose((2, 0, 1))
 
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255

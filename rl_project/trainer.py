@@ -125,9 +125,10 @@ class Trainer:
 
         # target net only for inference
         target_net.eval()
-
+        
         optimizer = optim.Adam(params=policy_net.parameters(), lr=self.learning_rate)
-
+        print(type(policy_net))
+        print(type(optimizer))
         all_rewards = []
 
         # For each episode:
@@ -204,6 +205,19 @@ class Trainer:
                 break
 
     def optimize(self, memory, policy_net, target_net, optimizer):
+        """Optimization or learning step
+
+        Parameters
+        ----------
+        memory : ReplayMemory
+            memory queue of accumulated experience
+        policy_net : nn.Module
+            policy network
+        target_net : nn.Module
+            target network
+        optimizer : torch.optim
+            torch optimizer
+        """
         if memory.can_provide_sample(self.batch_size):
             experiences = memory.sample(self.batch_size)
 
