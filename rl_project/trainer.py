@@ -201,8 +201,8 @@ class Trainer:
             if episode % self.update_freq == 0:
                 target_net.load_state_dict(policy_net.state_dict())
 
-            if episode % self.reset_weight == 0:
-                for param in policy_net.parameters:
+            if episode % self.reset_weight == 0 and episode > 1:
+                for param in policy_net.parameters():
                     resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * 0.9))
                     for i in resets:
                         i.data.fill_(0.01)
