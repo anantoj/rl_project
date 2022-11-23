@@ -46,7 +46,8 @@ class Trainer:
         verbose=True,
         mode="pos",
         image_dim=(128, 128),
-        reset_weight = 15,
+        reset_freq = 15,
+        reset_precent = 0.1,
     ):
 
         self.env = env
@@ -68,7 +69,8 @@ class Trainer:
         self.learning_rate = learning_rate
         self.num_episodes = num_episodes
 
-        self.reset_weight = reset_weight
+        self.reset_freq= reset_freq
+        self.reset_percent = reset_precent
 
         self.render = render
         self.verbose = verbose
@@ -201,9 +203,9 @@ class Trainer:
             if episode % self.update_freq == 0:
                 target_net.load_state_dict(policy_net.state_dict())
 
-            if episode % self.reset_weight == 0 and episode > 1:
+            if episode % self.reset_freq == 0 and episode > 1:
                 for param in policy_net.parameters():
-                    resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * 0.2))
+                    resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * self.reset_percent))
                     for i in resets:
                         i.data.fill_(0.01)
 
