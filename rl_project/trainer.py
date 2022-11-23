@@ -203,7 +203,7 @@ class Trainer:
 
             if episode % self.reset_weight == 0 and episode > 1:
                 for param in policy_net.parameters():
-                    resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * 0.9))
+                    resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * 0.2))
                     for i in resets:
                         i.data.fill_(0.01)
 
