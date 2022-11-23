@@ -8,9 +8,12 @@ import torch.nn.functional as F
 from typing import NamedTuple, Tuple
 from collections import namedtuple, deque
 
+import random
+
 from .networks.baseline_model import BaselineModel, BaselineVisionModelV2
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
+import copy
 
 Experience = namedtuple(
     "Experience", ("state", "action", "reward", "next_state", "done")
@@ -43,6 +46,7 @@ class Trainer:
         verbose=True,
         mode="pos",
         image_dim=(128, 128),
+        reset_weight = 15,
     ):
 
         self.env = env
@@ -63,6 +67,8 @@ class Trainer:
         self.memory_size = memory_size  # Replay Memory capacity
         self.learning_rate = learning_rate
         self.num_episodes = num_episodes
+
+        self.reset_weight = reset_weight
 
         self.render = render
         self.verbose = verbose
@@ -113,11 +119,12 @@ class Trainer:
                     self.model, env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
+
                 policy_net = VisionModel(
-                    self.model, mode="img", out_features=env.get_action_space()
+                    copy.deepcopy(self.model), mode="img", out_features=env.get_action_space()
                 ).to(device)
                 target_net = VisionModel(
-                    self.model, mode="img", out_features=env.get_action_space()
+                    copy.deepcopy(self.model), mode="img", out_features=env.get_action_space()
                 ).to(device)
 
         # Copy policy network weights for uniformity
@@ -193,6 +200,12 @@ class Trainer:
             # Update target_net with policy_net
             if episode % self.update_freq == 0:
                 target_net.load_state_dict(policy_net.state_dict())
+
+            if episode % self.reset_weight == 0:
+                for param in policy_net.parameters:
+                    resets = random.sample(list(param.view(-1)), int(len(list(param.view(-1))) * 0.9))
+                    for i in resets:
+                        i.data.fill_(0.01)
 
             # Preemptively end training if target is reached
             if (

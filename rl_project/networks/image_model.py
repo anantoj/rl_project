@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import torchvision
+import copy
 
 class VisionModel(nn.Module):
     def __init__(self, image_model, in_features=None, out_features=None, mode="pos"):
@@ -43,7 +44,29 @@ class VisionModel(nn.Module):
                 )
 
         elif mode == "img":
-            raise NotImplementedError("Vision Model wrapper not yet implemented")
+            if self.image_model.__class__.__name__ == "ResNet":
+                self.image_model.conv1 = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3,bias=False)    
+                self.image_model.fc = nn.Linear(
+                    self.image_model.fc.in_features, self.out_features
+                )
+            else:
+                # model = torchvision.models.efficientnet_b0()
+                first_conv_layer = [nn.Conv2d(6, 3, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True)]
+                first_conv_layer.extend(list(self.image_model.features))
+                self.image_model.features = nn.Sequential(*first_conv_layer )
+
+                self.image_model(torch.randn(1, 6, 60, 135))
+
+                self.image_model.classifier[
+                    len(self.image_model.classifier) - 1
+                ] = nn.Linear(
+                    image_model.classifier[
+                        len(image_model.classifier) - 1
+                    ].in_features,
+                    self.out_features,
+                )
+                self.image_model(torch.randn(1,6,60,135))
+                
 
     def forward(self, t) -> torch.Tensor:
         if self.mode == "pos":
