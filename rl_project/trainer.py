@@ -10,7 +10,7 @@ from collections import namedtuple, deque
 
 import random
 
-from .networks.baseline_model import BaselineModel, BaselineVisionModelV2
+from .networks.baseline_model import BaselinePosModel, get_model
 from .networks.image_model import VisionModel
 from .utils import EnvManager, EpsilonGreedyStrategy, Agent, ReplayMemory, QValues
 import copy
@@ -30,6 +30,7 @@ class Trainer:
         self,
         env="CartPole-v1",
         model=None,
+        baseline_vision_model="BaselineVisionModel",
         batch_size=256,
         num_streaks=100,
         target_reward=195,
@@ -52,6 +53,7 @@ class Trainer:
 
         self.env = env
         self.model = model
+        self.baseline_model = baseline_vision_model
 
         self.batch_size = batch_size
         self.num_streaks = num_streaks  # number of streaks to indicate completion
@@ -98,19 +100,21 @@ class Trainer:
 
         if self.model is None:
             if self.mode == "pos":
-                policy_net = BaselineModel(
+                policy_net = BaselinePosModel(
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
-                target_net = BaselineModel(
+                target_net = BaselinePosModel(
                     env.num_state_features(), env.get_action_space()
                 ).to(device)
             elif self.mode == "img":
-                policy_net = BaselineVisionModelV2(
-                    self.image_dim[0], self.image_dim[1], env.get_action_space()
-                ).to(device)
-                target_net = BaselineVisionModelV2(
-                    self.image_dim[0], self.image_dim[1], env.get_action_space()
-                ).to(device)
+                policy_net = get_model(self.baseline_model, self.image_dim[0], self.image_dim[1], env.get_action_space()).to(device)
+                target_net = get_model(self.baseline_model, self.image_dim[0], self.image_dim[1], env.get_action_space()).to(device)
+                # policy_net = BaselineVisionModelV2(
+                #     self.image_dim[0], self.image_dim[1], env.get_action_space()
+                # ).to(device)
+                # target_net = BaselineVisionModelV2(
+                #     self.image_dim[0], self.image_dim[1], env.get_action_space()
+                # ).to(device)
 
         else:
             if self.mode == "pos":

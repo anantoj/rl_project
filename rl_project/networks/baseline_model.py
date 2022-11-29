@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class BaselineModel(nn.Module):
+class BaselinePosModel(nn.Module):
     def __init__(self, in_features, out_features):
         """Initialize baseline DQN model architecture
 
@@ -35,33 +35,8 @@ class BaselineModel(nn.Module):
 
 
 class BaselineVisionModel(nn.Module):
-    def __init__(self, h, w, outputs):
+    def __init__(self, h , w, outputs):
         super(BaselineVisionModel, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(32)
-
-        def conv2d_size_out(size, kernel_size=5, stride=2):
-            return (size - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
-
-    def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        return self.head(x.view(x.size(0), -1))
-
-
-class BaselineVisionModelV2(nn.Module):
-    def __init__(self, h, w, outputs):
-        super(BaselineVisionModelV2, self).__init__()
         self.conv1 = nn.Conv2d(6, 64, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
@@ -82,3 +57,80 @@ class BaselineVisionModelV2(nn.Module):
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
         return self.head(x.view(x.size(0), -1))
+
+class BaselineVisionModel5L(nn.Module):
+    def __init__(self, h , w, outputs):
+        super(BaselineVisionModel5L, self).__init__()
+        self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(128)
+
+        def conv2d_size_out(size, kernel_size=5, stride=2):
+            return (size - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
+        linear_input_size = convw * convh * 32
+        self.head = nn.Linear(linear_input_size, outputs)
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn2(self.conv3(x)))
+        x = F.relu(self.bn3(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv5(x)))
+        return self.head(x.view(x.size(0), -1))
+
+class BaselineVisionModel6L(nn.Module):
+    def __init__(self, h , w, outputs):
+        super(BaselineVisionModel6L, self).__init__()
+        self.conv1 = nn.Conv2d(6, 64, kernel_size=5, stride=2)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.conv5 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.conv6 = nn.Conv2d(64, 32, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(32)
+
+        def conv2d_size_out(size, kernel_size=5, stride=2):
+            return (size - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
+        linear_input_size = convw * convh * 32
+        self.head = nn.Linear(linear_input_size, outputs)
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn2(self.conv3(x)))
+        x = F.relu(self.bn3(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv5(x)))
+        x = F.relu(self.bn3(self.conv6(x)))
+        return self.head(x.view(x.size(0), -1))
+
+def get_model(model_name, h,w,outputs):
+    model_dict = {
+        "BaselineVisionModel" : BaselineVisionModel,
+        "BaselineVisionModel5L" : BaselineVisionModel5L,
+        "BaselineVisionModel6L" : BaselineVisionModel6L,
+    }
+
+    if model_name not in model_dict:
+        raise ValueError("Baseline Model name does not exists")
+
+    model = model_dict["BaselineVisionModel"](h,w,outputs)
+    
+    return model
