@@ -215,7 +215,7 @@ class Trainer:
                 and self.get_average_reward(all_rewards, self.num_streaks)
                 >= self.target_reward
             ):
-                print(f"Solved {self.env.unwrapped.spec.id} in {episode} episodes!")
+                print(f"Solved {self.env} in {episode} episodes!")
                 break
 
     def optimize(self, memory, policy_net, target_net, optimizer):
