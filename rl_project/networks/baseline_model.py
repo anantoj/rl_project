@@ -197,6 +197,7 @@ def get_model(model_name, h,w,outputs):
         "VisionExpand5L" : VisionExpand5L,
         "BaselineVisionModel6L" : BaselineVisionModel6L,
         "VisionExpand4L": VisionExpand4L,
+        "VisionExpand10L": VisionExpand10L,
     }
 
     if model_name not in model_dict:
