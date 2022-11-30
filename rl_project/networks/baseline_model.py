@@ -224,6 +224,7 @@ def get_model(model_name, h,w,outputs):
         "VisionExpand5L" : VisionExpand5L,
         "BaselineVisionModel6L" : BaselineVisionModel6L,
         "VisionExpand4L": VisionExpand4L,
+        "VisionExpand3L": VisionExpand3L,
         "VisionExpand9L": VisionExpand9L,
     }
 
