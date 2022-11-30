@@ -150,19 +150,19 @@ class VisionExpand9L(nn.Module):
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(64)
         self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(128)
         self.conv5 = nn.Conv2d(128, 128, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(128)
+        self.bn5 = nn.BatchNorm2d(128)
         self.conv6 = nn.Conv2d(128, 64, kernel_size=3, stride=1)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn6 = nn.BatchNorm2d(64)
         self.conv7 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
-        self.bn2 = nn.BatchNorm2d(32)
+        self.bn7 = nn.BatchNorm2d(32)
         self.conv8 = nn.Conv2d(32, 16, kernel_size=3, stride=1)
-        self.bn2 = nn.BatchNorm2d(16)
+        self.bn8 = nn.BatchNorm2d(16)
         self.conv9 = nn.Conv2d(16, 16, kernel_size=3, stride=1)
-        self.bn3 = nn.BatchNorm2d(16)
+        self.bn9 = nn.BatchNorm2d(16)
 
         def conv2d_size_out(size, kernel_size=5, stride=2):
             return (size - (kernel_size - 1) - 1) // stride + 1
@@ -182,6 +182,40 @@ class VisionExpand9L(nn.Module):
         x = F.relu(self.bn2(self.conv7(x)))
         x = F.relu(self.bn2(self.conv8(x)))
         x = F.relu(self.bn3(self.conv9(x)))
+        return self.head(x.view(x.size(0), -1))
+
+class VisionExpand6L(nn.Module):
+    def __init__(self, h , w, outputs):
+        super(VisionExpand6L, self).__init__()
+        self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=5, stride=2)
+        self.bn5 = nn.BatchNorm2d(128)
+        self.conv6 = nn.Conv2d(128, 64, kernel_size=3, stride=1)
+        self.bn6 = nn.BatchNorm2d(64)
+        
+
+        def conv2d_size_out(size, kernel_size=5, stride=2):
+            return (size - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
+        linear_input_size = convw * convh * 32
+        self.head = nn.Linear(linear_input_size, outputs)
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn2(self.conv3(x)))
+        x = F.relu(self.bn3(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv5(x)))
+        x = F.relu(self.bn1(self.conv6(x)))
         return self.head(x.view(x.size(0), -1))
 
 
@@ -226,6 +260,7 @@ def get_model(model_name, h,w,outputs):
         "VisionExpand4L": VisionExpand4L,
         "VisionExpand3L": VisionExpand3L,
         "VisionExpand9L": VisionExpand9L,
+        "VisionExpand6L": VisionExpand6L,
     }
 
     if model_name not in model_dict:
