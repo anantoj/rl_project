@@ -828,6 +828,7 @@ class VisionExpand69LDropout(nn.Module):
         self.bn68 = nn.BatchNorm2d(128)
         self.conv69 = nn.Conv2d(128, 128, kernel_size=5, stride=1)
         self.bn69 = nn.BatchNorm2d(128)
+        self.dropout = nn.Dropout(0.2)
 
         def conv2d_size_out(size, kernel_size=5, stride=2):
             return (size - (kernel_size - 1) - 1) // stride + 1
@@ -907,6 +908,7 @@ class VisionExpand69LDropout(nn.Module):
         x = F.relu(self.bn67(self.conv67(x)))
         x = F.relu(self.bn68(self.conv68(x)))
         x = F.relu(self.bn69(self.conv69(x)))
+        x = self.dropout(x)
         return self.head(x.view(x.size(0), -1))
 
 class VisionExpand6L(nn.Module):
