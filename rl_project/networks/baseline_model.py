@@ -397,7 +397,9 @@ def get_model(model_name, h,w,outputs):
         "VisionExpand9L": VisionExpand9L,
         "VisionExpand6L": VisionExpand6L,
         "VisionExpand13L": VisionExpand13L,
+        "VisionExpand21L": VisionExpand21L,
     }
+
 
     if model_name not in model_dict:
         raise ValueError("Baseline Model name does not exists")
