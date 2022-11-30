@@ -58,6 +58,33 @@ class BaselineVisionModel(nn.Module):
         x = F.relu(self.bn3(self.conv3(x)))
         return self.head(x.view(x.size(0), -1))
 
+
+class VisionExpand3L(nn.Module):
+    def __init__(self, h , w, outputs):
+        super(VisionExpand3L, self).__init__()
+        self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
+        self.bn3 = nn.BatchNorm2d(32)
+        
+        def conv2d_size_out(size, kernel_size=5, stride=2):
+            return (size - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
+        linear_input_size = convw * convh * 32
+        self.head = nn.Linear(linear_input_size, outputs)
+
+    def forward(self, x):
+            x = F.relu(self.bn1(self.conv1(x)))
+            x = F.relu(self.bn2(self.conv2(x)))
+            x = F.relu(self.bn2(self.conv3(x)))
+            x = F.relu(self.bn3(self.conv4(x)))
+            return self.head(x.view(x.size(0), -1))
+
+
 class VisionExpand4L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionExpand4L, self).__init__()
@@ -66,9 +93,9 @@ class VisionExpand4L(nn.Module):
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(64)
         self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(128)
 
         def conv2d_size_out(size, kernel_size=5, stride=2):
             return (size - (kernel_size - 1) - 1) // stride + 1
@@ -81,8 +108,8 @@ class VisionExpand4L(nn.Module):
     def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn2(self.conv3(x)))
-        x = F.relu(self.bn3(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
         return self.head(x.view(x.size(0), -1))
 
 class VisionExpand5L(nn.Module):
@@ -115,9 +142,9 @@ class VisionExpand5L(nn.Module):
         x = F.relu(self.bn5(self.conv5(x)))
         return self.head(x.view(x.size(0), -1))
 
-class VisionExpand10L(nn.Module):
+class VisionExpand9L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand10L, self).__init__()
+        super(VisionExpand9L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -197,7 +224,7 @@ def get_model(model_name, h,w,outputs):
         "VisionExpand5L" : VisionExpand5L,
         "BaselineVisionModel6L" : BaselineVisionModel6L,
         "VisionExpand4L": VisionExpand4L,
-        "VisionExpand10L": VisionExpand10L,
+        "VisionExpand9L": VisionExpand9L,
     }
 
     if model_name not in model_dict:
