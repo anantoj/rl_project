@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-class BaselinePosModel(nn.Module):
+class PosModel(nn.Module):
     def __init__(self, in_features, out_features):
         """Initialize baseline DQN model architecture
 
@@ -34,34 +33,9 @@ class BaselinePosModel(nn.Module):
         return t
 
 
-class BaselineVisionModel(nn.Module):
+class VisionModel3L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(BaselineVisionModel, self).__init__()
-        self.conv1 = nn.Conv2d(6, 64, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 32, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(32)
-
-        def conv2d_size_out(size, kernel_size=5, stride=2):
-            return (size - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
-
-    def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        return self.head(x.view(x.size(0), -1))
-
-
-class VisionExpand3L(nn.Module):
-    def __init__(self, h , w, outputs):
-        super(VisionExpand3L, self).__init__()
+        super(VisionModel3L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -84,9 +58,9 @@ class VisionExpand3L(nn.Module):
             return self.head(x.view(x.size(0), -1))
 
 
-class VisionExpand4L(nn.Module):
+class VisionModel4L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand4L, self).__init__()
+        super(VisionModel4L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -111,39 +85,10 @@ class VisionExpand4L(nn.Module):
         x = F.relu(self.bn4(self.conv4(x)))
         return self.head(x.view(x.size(0), -1))
 
-class VisionExpand5L(nn.Module):
+
+class VisionModel9L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand5L, self).__init__()
-        self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
-        self.bn4 = nn.BatchNorm2d(128)
-        self.conv5 = nn.Conv2d(128, 128, kernel_size=5, stride=2)
-        self.bn5 = nn.BatchNorm2d(128)
-
-        def conv2d_size_out(size, kernel_size=5, stride=2):
-            return (size - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
-
-    def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = F.relu(self.bn4(self.conv4(x)))
-        x = F.relu(self.bn5(self.conv5(x)))
-        return self.head(x.view(x.size(0), -1))
-
-class VisionExpand9L(nn.Module):
-    def __init__(self, h , w, outputs):
-        super(VisionExpand9L, self).__init__()
+        super(VisionModel9L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -183,9 +128,9 @@ class VisionExpand9L(nn.Module):
         x = F.relu(self.bn9(self.conv9(x)))
         return self.head(x.view(x.size(0), -1))
 
-class VisionExpand13L(nn.Module):
+class VisionModel13L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand13L, self).__init__()
+        super(VisionModel13L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -238,9 +183,9 @@ class VisionExpand13L(nn.Module):
         return self.head(x.view(x.size(0), -1))
 
 
-class VisionExpand21L(nn.Module):
+class VisionModel21L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand21L, self).__init__()
+        super(VisionModel21L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -318,9 +263,9 @@ class VisionExpand21L(nn.Module):
         return self.head(x.view(x.size(0), -1))
 
 
-class VisionExpand37L(nn.Module):
+class VisionModel37L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand37L, self).__init__()
+        super(VisionModel37L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -449,9 +394,9 @@ class VisionExpand37L(nn.Module):
         return self.head(x.view(x.size(0), -1))
 
 
-class VisionExpand69L(nn.Module):
+class VisionModel69L(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand69L, self).__init__()
+        super(VisionModel69L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -679,9 +624,9 @@ class VisionExpand69L(nn.Module):
         x = F.relu(self.bn69(self.conv69(x)))
         return self.head(x.view(x.size(0), -1))
 
-class VisionExpand69LDropout(nn.Module):
+class VisionModel69LDropout(nn.Module):
     def __init__(self, h , w, outputs):
-        super(VisionExpand69LDropout, self).__init__()
+        super(VisionModel69LDropout, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -911,88 +856,17 @@ class VisionExpand69LDropout(nn.Module):
         x = self.dropout(x)
         return self.head(x.view(x.size(0), -1))
 
-class VisionExpand6L(nn.Module):
-    def __init__(self, h , w, outputs):
-        super(VisionExpand6L, self).__init__()
-        self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.conv4 = nn.Conv2d(64, 128, kernel_size=5, stride=2)
-        self.bn4 = nn.BatchNorm2d(128)
-        self.conv5 = nn.Conv2d(128, 128, kernel_size=5, stride=2)
-        self.bn5 = nn.BatchNorm2d(128)
-        self.conv6 = nn.Conv2d(128, 64, kernel_size=3, stride=1)
-        self.bn6 = nn.BatchNorm2d(64)
-        
 
-        def conv2d_size_out(size, kernel_size=5, stride=2):
-            return (size - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
-
-    def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = F.relu(self.bn4(self.conv4(x)))
-        x = F.relu(self.bn5(self.conv5(x)))
-        x = F.relu(self.bn6(self.conv6(x)))
-        return self.head(x.view(x.size(0), -1))
-
-
-class BaselineVisionModel6L(nn.Module):
-    def __init__(self, h , w, outputs):
-        super(BaselineVisionModel6L, self).__init__()
-        self.conv1 = nn.Conv2d(6, 64, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv4 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.conv5 = nn.Conv2d(64, 64, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.conv6 = nn.Conv2d(64, 32, kernel_size=5, stride=2)
-        self.bn3 = nn.BatchNorm2d(32)
-
-        def conv2d_size_out(size, kernel_size=5, stride=2):
-            return (size - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
-
-    def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = F.relu(self.bn4(self.conv4(x)))
-        x = F.relu(self.bn5(self.conv5(x)))
-        x = F.relu(self.bn6(self.conv6(x)))
-        return self.head(x.view(x.size(0), -1))
-
-def get_model(model_name, h,w,outputs):
+def get_vision_model(model_name, h,w,outputs):
     model_dict = {
-        "BaselineVisionModel" : BaselineVisionModel,
-        "VisionExpand5L" : VisionExpand5L,
-        "BaselineVisionModel6L" : BaselineVisionModel6L,
-        "VisionExpand4L": VisionExpand4L,
-        "VisionExpand3L": VisionExpand3L,
-        "VisionExpand9L": VisionExpand9L,
-        "VisionExpand6L": VisionExpand6L,
-        "VisionExpand13L": VisionExpand13L,
-        "VisionExpand21L": VisionExpand21L,
-        "VisionExpand37L": VisionExpand37L,
-        "VisionExpand69L": VisionExpand69L,
-        "VisionExpand69LDropout": VisionExpand69LDropout,
+        "VisionModel3L": VisionModel3L,
+        "VisionModel4L": VisionModel4L,
+        "VisionModel9L": VisionModel9L,
+        "VisionModel13L": VisionModel13L,
+        "VisionModel21L": VisionModel21L,
+        "VisionModel37L": VisionModel37L,
+        "VisionModel69L": VisionModel69L,
+        "VisionModel69LDropout": VisionModel69LDropout,
     }
 
 
