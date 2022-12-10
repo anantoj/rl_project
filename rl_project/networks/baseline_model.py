@@ -37,7 +37,7 @@ class VisionModel3L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel3L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
@@ -62,7 +62,7 @@ class VisionModel4L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel4L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -90,7 +90,7 @@ class VisionModel9L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel9L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -132,7 +132,7 @@ class VisionModel13L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel13L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -187,7 +187,7 @@ class VisionModel21L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel21L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -267,7 +267,7 @@ class VisionModel37L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel37L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -398,7 +398,7 @@ class VisionModel69L(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel69L, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
@@ -628,7 +628,7 @@ class VisionModel69LDropout(nn.Module):
     def __init__(self, h , w, outputs):
         super(VisionModel69LDropout, self).__init__()
         self.conv1 = nn.Conv2d(6, 16, kernel_size=5, stride=2)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=5, stride=2)
