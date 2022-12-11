@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 class PosModel(nn.Module):
     def __init__(self, in_features, out_features):

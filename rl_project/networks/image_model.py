@@ -1,8 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-import copy
 
 class VisionModel(nn.Module):
     def __init__(self, image_model, in_features=None, out_features=None, mode="pos"):
