@@ -449,6 +449,6 @@ def get_vision_model(model_name, h,w,outputs):
     if model_name not in model_dict:
         raise ValueError("Baseline Model name does not exists")
 
-    model = model_dict[model_name](h,w,outputs)
+    model = model_dict["VisionModel3L"](h,w,outputs)
     
     return model
